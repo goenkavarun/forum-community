@@ -1,0 +1,50 @@
+{
+  "name": "community-forum-pro",
+  "version": "2.0.0",
+  "description": "Production-grade community forum with user auth, search, analytics, and more",
+  "main": "server-production.js",
+  "scripts": {
+    "start": "node server-production.js",
+    "dev": "nodemon server-production.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "seed": "node scripts/seed.js",
+    "backup": "node scripts/backup.js",
+    "migrate": "node scripts/migrate.js"
+  },
+  "keywords": [
+    "forum",
+    "community",
+    "discussion",
+    "moderation",
+    "authentication"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "nodemailer": "^6.9.7",
+    "node-schedule": "^2.1.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.1.2",
+    "validator": "^13.11.0",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.54.0"
+  }
+}

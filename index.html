@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Forum - India Digital Marketing Forum</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --navy: #0B1B3E;
+      --navy-mid: #122456;
+      --saffron: #FF6B00;
+      --saffron-light: #FF8C35;
+      --gold: #F5A623;
+      --cream: #FDF8F2;
+      --white: #ffffff;
+      --text-dark: #0B1B3E;
+      --text-mid: #3D4F70;
+      --text-light: #7B8BA8;
+      --border: #E2E8F4;
+      --green: #16A34A;
+      --red: #DC2626;
+      --blue: #3B82F6;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text-dark);
+      background: #f8f9fa;
+      overflow-x: hidden;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* ─── NAVBAR ─────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(11, 27, 62, 0.97);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .nav-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--saffron), var(--gold));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 18px;
+      color: white;
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 13px;
+      color: white;
+      line-height: 1.3;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-links a,
+    .nav-links button {
+      text-decoration: none;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .nav-links a:hover,
+    .nav-links button:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-admin {
+      background: var(--saffron) !important;
+      color: white !important;
+    }
+
+    .nav-admin:hover {
+      background: var(--saffron-light) !important;
+    }
+
+    /* ─── MAIN CONTAINER ─────────────────────────────────────── */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .forum-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .forum-header h1 {
+      font-family: var(--font-display);
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 12px;
+    }
+
+    .forum-header p {
+      font-size: 18px;
+      color: var(--text-light);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ─── TWO COLUMN LAYOUT ─────────────────────────────────────── */
+    .forum-layout {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 32px;
+    }
+
+    /* ─── CREATE POST FORM ─────────────────────────────────────── */
+    .create-post-section {
+      background: white;
+      border-radius: 12px;
+      padding: 28px;
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .create-post-section h2 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text-dark);
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-dark);
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--saffron);
+      box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--saffron), var(--gold));
+      color: white;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* ─── FILTERS ─────────────────────────────────────── */
+    .filters-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .filters-section h3 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-dark);
+      font-size: 16px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-tab {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      font-size: 14px;
+      color: var(--text-mid);
+    }
+
+    .filter-tab:hover {
+      background: var(--cream);
+      border-color: var(--saffron);
+    }
+
+    .filter-tab.active {
+      background: var(--saffron);
+      color: white;
+      border-color: var(--saffron);
+    }
+
+    /* ─── POSTS LIST ─────────────────────────────────────── */
+    .posts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .post-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .post-card:hover {
+      border-color: var(--saffron);
+      box-shadow: 0 8px 20px rgba(255, 107, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .post-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .post-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+    }
+
+    .post-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .post-category {
+      display: inline-block;
+      padding: 4px 10px;
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.1), rgba(245, 166, 35, 0.1));
+      border-radius: 6px;
+      color: var(--saffron);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .post-content {
+      color: var(--text-mid);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .post-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .post-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    .post-action {
+      background: var(--cream);
+      color: var(--saffron);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .post-action:hover {
+      background: var(--saffron);
+      color: white;
+    }
+
+    /* ─── SIDEBAR ─────────────────────────────────────── */
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+
+    .sidebar-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-card h3 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text-dark);
+      font-size: 15px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      color: var(--saffron);
+      font-size: 16px;
+    }
+
+    .guidelines {
+      font-size: 13px;
+      color: var(--text-mid);
+      line-height: 1.6;
+    }
+
+    .guidelines li {
+      margin-bottom: 10px;
+      margin-left: 16px;
+    }
+
+    /* ─── EMPTY STATE ─────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: white;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-dark);
+    }
+
+    .empty-state p {
+      color: var(--text-light);
+      margin-bottom: 20px;
+    }
+
+    /* ─── LOADING & SUCCESS STATES ─────────────────────────────────────── */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 107, 0, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--saffron);
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .alert {
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert-success {
+      background: rgba(22, 163, 74, 0.1);
+      color: var(--green);
+      border-left: 4px solid var(--green);
+    }
+
+    .alert-error {
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--red);
+      border-left: 4px solid var(--red);
+    }
+
+    .alert-info {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--blue);
+      border-left: 4px solid var(--blue);
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .forum-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        order: -1;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <!-- ─── NAVBAR ─────────────────────────────────────── -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="logo-icon">ID</div>
+        <div class="logo-text">
+          India Digital Marketing Forum
+          <span>Community Forum</span>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/">← Back to Home</a></li>
+        <li><button class="nav-admin" onclick="showAdminLogin()">🔐 Admin Panel</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ─── MAIN CONTENT ─────────────────────────────────────── -->
+  <div class="container">
+    <div class="forum-header">
+      <h1>Community Forum</h1>
+      <p>Connect with fellow digital marketers, share ideas, and solve challenges together</p>
+    </div>
+
+    <div class="forum-layout">
+      <!-- MAIN FEED -->
+      <main>
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Create Post Section -->
+        <div class="create-post-section">
+          <h2>Start a Discussion</h2>
+          <form id="createPostForm" onsubmit="handleCreatePost(event)">
+            <div class="form-group">
+              <label for="postTitle">Discussion Title *</label>
+              <input type="text" id="postTitle" name="title" placeholder="What's on your mind?" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="postAuthor">Your Name *</label>
+                <input type="text" id="postAuthor" name="author" placeholder="Your name" required />
+              </div>
+              <div class="form-group">
+                <label for="postEmail">Email Address *</label>
+                <input type="email" id="postEmail" name="email" placeholder="your@email.com" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="postCategory">Category *</label>
+              <select id="postCategory" name="category" required>
+                <option value="">Select a category...</option>
+                <option value="Strategy">Strategy & Planning</option>
+                <option value="Social Media">Social Media</option>
+                <option value="SEO">SEO & Content</option>
+                <option value="Analytics">Analytics & Tools</option>
+                <option value="Paid Ads">Paid Ads</option>
+                <option value="Ecommerce">E-commerce</option>
+                <option value="AI Tools">AI Tools & Automation</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="postContent">Description *</label>
+              <textarea id="postContent" name="content" placeholder="Share your thoughts, question, or experience..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">Post to Forum</button>
+            <small style="display: block; margin-top: 10px; color: var(--text-light); text-align: center;">
+              ✓ Your post will be reviewed by our moderators before appearing on the forum
+            </small>
+          </form>
+        </div>
+
+        <!-- Posts List -->
+        <div id="postsList" class="posts-list"></div>
+      </main>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <!-- Filters -->
+        <div class="filters-section">
+          <h3>📁 Filter by Category</h3>
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterByCategory('all')">All Posts</button>
+            <button class="filter-tab" onclick="filterByCategory('Strategy')">Strategy</button>
+            <button class="filter-tab" onclick="filterByCategory('Social Media')">Social Media</button>
+            <button class="filter-tab" onclick="filterByCategory('SEO')">SEO</button>
+            <button class="filter-tab" onclick="filterByCategory('Analytics')">Analytics</button>
+            <button class="filter-tab" onclick="filterByCategory('Paid Ads')">Paid Ads</button>
+            <button class="filter-tab" onclick="filterByCategory('AI Tools')">AI Tools</button>
+          </div>
+        </div>
+
+        <!-- Forum Stats -->
+        <div class="sidebar-card">
+          <h3>📊 Forum Activity</h3>
+          <div class="stat-item">
+            <span>Total Posts</span>
+            <span class="stat-value" id="totalPosts">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Today</span>
+            <span class="stat-value" id="todayPosts">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Active Members</span>
+            <span class="stat-value" id="activeMembers">-</span>
+          </div>
+        </div>
+
+        <!-- Guidelines -->
+        <div class="sidebar-card">
+          <h3>📋 Community Guidelines</h3>
+          <ul class="guidelines">
+            <li>Be respectful and professional</li>
+            <li>No spam or self-promotion</li>
+            <li>Search before posting</li>
+            <li>Provide context and examples</li>
+            <li>Stay on topic</li>
+            <li>All posts require moderation</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ─── ADMIN LOGIN MODAL ─────────────────────────────────────── -->
+  <div id="adminModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+    <div style="background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <h2 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 20px;">Admin Login</h2>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Password</label>
+        <input type="password" id="adminPassword" placeholder="Enter admin password" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-body);" />
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="loginAsAdmin()" style="flex: 1; background: var(--saffron); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Login</button>
+        <button onclick="closeAdminModal()" style="flex: 1; background: var(--border); color: var(--text-dark); padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+    let currentCategory = 'all';
+    let adminToken = localStorage.getItem('adminToken');
+
+    // ──────────────────────────────────
+    // INITIALIZATION
+    // ──────────────────────────────────
+    function init() {
+      loadPosts();
+      updateStats();
+      // Refresh stats every 30 seconds
+      setInterval(updateStats, 30000);
+    }
+
+    // ──────────────────────────────────
+    // CREATE POST
+    // ──────────────────────────────────
+    function handleCreatePost(event) {
+      event.preventDefault();
+
+      const formData = {
+        title: document.getElementById('postTitle').value,
+        author: document.getElementById('postAuthor').value,
+        email: document.getElementById('postEmail').value,
+        category: document.getElementById('postCategory').value,
+        content: document.getElementById('postContent').value
+      };
+
+      // Validate
+      if (!formData.title.trim() || !formData.content.trim()) {
+        showAlert('Please fill in all fields', 'error');
+        return;
+      }
+
+      const submitBtn = event.target.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading"></span> Posting...';
+
+      fetch(`${API_BASE}/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showAlert('✓ Post submitted successfully! Awaiting admin approval.', 'success');
+            event.target.reset();
+            loadPosts();
+          } else {
+            showAlert(data.error || 'Failed to create post', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showAlert('Network error. Please try again.', 'error');
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Post to Forum';
+        });
+    }
+
+    // ──────────────────────────────────
+    // LOAD POSTS
+    // ──────────────────────────────────
+    function loadPosts() {
+      const url = currentCategory === 'all' 
+        ? `${API_BASE}/posts` 
+        : `${API_BASE}/posts?category=${currentCategory}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(posts => {
+          const container = document.getElementById('postsList');
+
+          if (posts.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <h3>No posts yet</h3>
+                <p>Be the first to start a discussion!</p>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = posts.map(post => {
+            const date = new Date(post.created_at);
+            const timeAgo = getTimeAgo(date);
+
+            return `
+              <div class="post-card" onclick="viewPost(${post.id})">
+                <div class="post-header">
+                  <div>
+                    <div class="post-title">${escapeHtml(post.title)}</div>
+                    <div class="post-meta">
+                      <span>👤 ${escapeHtml(post.author)}</span>
+                      <span>📅 ${timeAgo}</span>
+                    </div>
+                  </div>
+                  <span class="post-category">${post.category}</span>
+                </div>
+                <div class="post-content">${escapeHtml(post.content)}</div>
+                <div class="post-footer">
+                  <div class="post-stats">
+                    <span>👀 ${post.views} views</span>
+                    <span>💬 ${post.comments ? post.comments.length : 0} comments</span>
+                  </div>
+                  <button class="post-action" onclick="event.stopPropagation(); markHelpful(${post.id})">✓ Helpful</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(err => {
+          console.error(err);
+          showAlert('Failed to load posts', 'error');
+        });
+    }
+
+    // ──────────────────────────────────
+    // FILTER CATEGORY
+    // ──────────────────────────────────
+    function filterByCategory(category) {
+      currentCategory = category;
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      loadPosts();
+    }
+
+    // ──────────────────────────────────
+    // VIEW SINGLE POST
+    // ──────────────────────────────────
+    function viewPost(postId) {
+      localStorage.setItem('selectedPostId', postId);
+      window.location.href = `post.html?id=${postId}`;
+    }
+
+    // ──────────────────────────────────
+    // MARK HELPFUL
+    // ──────────────────────────────────
+    function markHelpful(postId) {
+      fetch(`${API_BASE}/posts/${postId}/helpful`, {
+        method: 'POST'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showAlert('✓ Thanks for your feedback!', 'success');
+          }
+        })
+        .catch(err => console.error(err));
+    }
+
+    // ──────────────────────────────────
+    // UPDATE STATS
+    // ──────────────────────────────────
+    function updateStats() {
+      fetch(`${API_BASE}/posts`)
+        .then(res => res.json())
+        .then(posts => {
+          const today = new Date().toDateString();
+          const todayCount = posts.filter(p => 
+            new Date(p.created_at).toDateString() === today
+          ).length;
+
+          document.getElementById('totalPosts').textContent = posts.length;
+          document.getElementById('todayPosts').textContent = todayCount;
+
+          // Unique authors
+          const authors = new Set(posts.map(p => p.author));
+          document.getElementById('activeMembers').textContent = authors.size;
+        })
+        .catch(err => console.error(err));
+    }
+
+    // ──────────────────────────────────
+    // ADMIN FUNCTIONS
+    // ──────────────────────────────────
+    function showAdminLogin() {
+      document.getElementById('adminModal').style.display = 'flex';
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').style.display = 'none';
+    }
+
+    function loginAsAdmin() {
+      const password = document.getElementById('adminPassword').value;
+
+      if (!password) {
+        showAlert('Please enter a password', 'error');
+        return;
+      }
+
+      fetch(`${API_BASE}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            adminToken = data.token;
+            localStorage.setItem('adminToken', adminToken);
+            showAlert('✓ Admin login successful!', 'success');
+            closeAdminModal();
+            setTimeout(() => {
+              window.location.href = 'admin.html';
+            }, 1000);
+          } else {
+            showAlert('Invalid password', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showAlert('Login failed', 'error');
+        });
+    }
+
+    // ──────────────────────────────────
+    // UTILITIES
+    // ──────────────────────────────────
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      let interval = seconds / 31536000;
+
+      if (interval > 1) return Math.floor(interval) + 'y ago';
+      interval = seconds / 2592000;
+      if (interval > 1) return Math.floor(interval) + 'mo ago';
+      interval = seconds / 86400;
+      if (interval > 1) return Math.floor(interval) + 'd ago';
+      interval = seconds / 3600;
+      if (interval > 1) return Math.floor(interval) + 'h ago';
+      interval = seconds / 60;
+      if (interval > 1) return Math.floor(interval) + 'm ago';
+      return Math.floor(seconds) + 's ago';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showAlert(message, type = 'info') {
+      const container = document.getElementById('alertContainer');
+      const alertEl = document.createElement('div');
+      alertEl.className = `alert alert-${type}`;
+      alertEl.textContent = message;
+      container.appendChild(alertEl);
+
+      setTimeout(() => {
+        alertEl.remove();
+      }, 4000);
+    }
+
+    // ──────────────────────────────────
+    // START APP
+    // ──────────────────────────────────
+    init();
+  </script>
+</body>
+
+</html>
