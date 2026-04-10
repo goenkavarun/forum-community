@@ -161,6 +161,59 @@ app.get('/community/admin', (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // API ROUTES - FORUM POSTS
 // ─────────────────────────────────────────────────────────────
+// Get all approved posts (for admin to manage)
+app.get('/api/admin/posts/approved', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['approved'], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows || []);
+    });
+  });
+});
+
+// Delete approved post
+app.delete('/api/admin/posts/approved/:id', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Get post details for email
+    db.get('SELECT * FROM posts WHERE id = ? AND status = ?', [req.params.id, 'approved'], async (err, post) => {
+      if (err || !post) return res.status(500).json({ error: 'Post not found' });
+
+      db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+
+        // Send deletion notification email to author
+        const emailHtml = `
+          <h2>Your Post Has Been Removed</h2>
+          <p>Hi ${post.author_name},</p>
+          <p>Your post "<strong>${post.title}</strong>" has been removed from the forum.</p>
+          <p>If you believe this is a mistake, please contact us.</p>
+          <hr>
+          <p>Best regards,<br>India Digital Marketing Forum Team</p>
+        `;
+
+        await sendEmail(post.author_email, 'Your Post Has Been Removed', emailHtml);
+
+        res.json({ message: 'Post deleted and author notified' });
+      });
+    });
+  });
+});
 
 // GET all posts
 app.get('/api/posts', (req, res) => {
