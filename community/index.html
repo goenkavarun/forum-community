@@ -548,6 +548,7 @@
 <script>
 // Load forum statistics
 function loadForumStats() {
+  // Fetch approved posts (PUBLIC endpoint - no auth needed)
   fetch('/api/posts')
     .then(response => response.json())
     .then(posts => {
