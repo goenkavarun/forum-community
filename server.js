@@ -1,4 +1,3 @@
-const PORT = process.env.PORT || 5000;
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -11,6 +10,7 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.set('trust proxy', 1);
 
 // ─────────────────────────────────────────────────────────────
 // EMAIL SETUP
