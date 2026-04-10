@@ -1860,6 +1860,52 @@ async function footerSubscribe() {
   }
 }
 </script>
+<script>
+// Newsletter Subscribe Function
+function footerSubscribe() {
+    const emailInput = document.querySelector('input[type="email"]') || 
+                       document.querySelector('input[placeholder*="email"]');
+    
+    const nameInput = document.querySelector('input[placeholder*="name"]') ||
+                      document.querySelector('input[placeholder*="Name"]');
 
+    if (!emailInput) {
+        alert('❌ Email input not found');
+        return;
+    }
+
+    const email = emailInput.value.trim();
+    const name = nameInput ? nameInput.value.trim() : 'Subscriber';
+
+    if (!email || !email.includes('@')) {
+        alert('❌ Please enter a valid email');
+        return;
+    }
+
+    const btn = event.target;
+    btn.textContent = '⏳ Subscribing...';
+    btn.disabled = true;
+
+    fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name })
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.error ? '❌ ' + data.error : '✅ ' + data.message);
+        if (!data.error) {
+            emailInput.value = '';
+            if (nameInput) nameInput.value = '';
+        }
+    })
+    .catch(e => alert('❌ Error: ' + e.message))
+    .finally(() => {
+        btn.textContent = 'Get Monthly Newsletter';
+        btn.disabled = false;
+    });
+}
+</script>
+                                               
 </body>
 </html>
