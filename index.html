@@ -1815,97 +1815,79 @@ Let’s connect and explore how I can contribute to your organization’s succes
         <li><a href="https://www.youtube.com/@indiadigitalmarketingforum/videos?app=desktop" target="_blank">YouTube Channel</a></li>
         <li><a href="https://www.linkedin.com/in/indiadigitalmarketingforum/" target="_blank">LinkedIn Profile</a></li>
         <li><a href="https://www.facebook.com/indiadigitalmarketingforum" target="_blank">Facebook Page</a></li>
-        <li><a href="/cdn-cgi/l/email-protection#84ece1e8e8ebc4edeae0ede5e0ede3edf0e5e8e9e5f6efe1f0edeae3e2ebf6f1e9aaebf6e3">Email Us</a></li>
-        <li><a href="/cdn-cgi/l/email-protection#532023363238133a3d373a32373a343a27323f3e32213836273a3d34353c21263e7d3c2134">Speak at Forum</a></li>
+        <li><a href="mailto:contact@indiadigitalmarketingforum.org">Email Us</a></li>
+        <li><a href="mailto:speaker@indiadigitalmarketingforum.org">Speak at Forum</a></li>
       </ul>
     </div>
     <div class="footer-col">
       <h4>Quick Subscribe</h4>
       <div class="footer-newsletter-mini">
-        <input id="footer-email" placeholder="Your email">
-<button onclick="footerSubscribe()">Get Monthly Newsletter</button>
+        <input id="footer-email" type="email" placeholder="Your email" />
+        <button onclick="footerSubscribe()">Get Monthly Newsletter</button>
       </div>
       <p style="font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 10px; font-weight: 300;">Free forever. No spam.</p>
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2025 India Digital Marketing Forum · <a href="https://ind
-<script>
-async function footerSubscribe() {
-  const email = document.getElementById('footer-email').value;
-  const name = prompt('Your name (optional):') || 'Subscriber';
+    <p>© 2025 India Digital Marketing Forum · All Rights Reserved</p>
+  </div>
+</footer>
 
+<!-- NEWSLETTER SUBSCRIPTION FUNCTION - SINGLE DEFINITION -->
+<script>
+function footerSubscribe() {
+  const emailInput = document.getElementById('footer-email');
+  const email = emailInput.value.trim();
+
+  // Validation
   if (!email) {
-    alert('Please enter your email');
+    alert('❌ Please enter your email');
     return;
   }
 
-  try {
-    const response = await fetch('/api/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name })
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert('✅ ' + data.message);
-      document.getElementById('footer-email').value = '';
-    } else {
-      alert('❌ ' + data.error);
-    }
-  } catch (error) {
-    alert('Error: ' + error.message);
+  if (!email.includes('@') || !email.includes('.')) {
+    alert('❌ Please enter a valid email address');
+    return;
   }
+
+  // Get button and show loading state
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ Subscribing...';
+  btn.disabled = true;
+
+  // Send subscription request
+  fetch('/api/subscribe', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email: email,
+      name: 'Subscriber'
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      alert('❌ ' + data.error);
+    } else {
+      alert('✅ ' + data.message);
+      emailInput.value = ''; // Clear input
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('❌ Error: ' + error.message);
+  })
+  .finally(() => {
+    // Restore button
+    btn.textContent = originalText;
+    btn.disabled = false;
+  });
 }
 </script>
-<script>
-// Newsletter Subscribe Function
-function footerSubscribe() {
-    const emailInput = document.querySelector('input[type="email"]') || 
-                       document.querySelector('input[placeholder*="email"]');
-    
-    const nameInput = document.querySelector('input[placeholder*="name"]') ||
-                      document.querySelector('input[placeholder*="Name"]');
 
-    if (!emailInput) {
-        alert('❌ Email input not found');
-        return;
-    }
-
-    const email = emailInput.value.trim();
-    const name = nameInput ? nameInput.value.trim() : 'Subscriber';
-
-    if (!email || !email.includes('@')) {
-        alert('❌ Please enter a valid email');
-        return;
-    }
-
-    const btn = event.target;
-    btn.textContent = '⏳ Subscribing...';
-    btn.disabled = true;
-
-    fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name })
-    })
-    .then(r => r.json())
-    .then(data => {
-        alert(data.error ? '❌ ' + data.error : '✅ ' + data.message);
-        if (!data.error) {
-            emailInput.value = '';
-            if (nameInput) nameInput.value = '';
-        }
-    })
-    .catch(e => alert('❌ Error: ' + e.message))
-    .finally(() => {
-        btn.textContent = 'Get Monthly Newsletter';
-        btn.disabled = false;
-    });
-}
-</script>
                                                
 </body>
 </html>
