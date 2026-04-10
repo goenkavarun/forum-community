@@ -545,5 +545,48 @@
             loadStats();
         }, 30000);
     </script>
+<script>
+// Load forum statistics
+function loadForumStats() {
+  fetch('/api/posts')
+    .then(response => response.json())
+    .then(posts => {
+      if (Array.isArray(posts)) {
+        // Total posts
+        document.getElementById('totalPosts').textContent = posts.length;
+        
+        // Posts today
+        const today = new Date().toDateString();
+        const postsToday = posts.filter(post => {
+          return new Date(post.created_at).toDateString() === today;
+        }).length;
+        document.getElementById('postsToday').textContent = postsToday;
+        
+        // Active members (unique authors)
+        const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
+        document.getElementById('activeMembers').textContent = uniqueMembers;
+      } else {
+        document.getElementById('totalPosts').textContent = 0;
+        document.getElementById('postsToday').textContent = 0;
+        document.getElementById('activeMembers').textContent = 0;
+      }
+    })
+    .catch(error => {
+      console.error('Error loading stats:', error);
+      document.getElementById('totalPosts').textContent = '?';
+      document.getElementById('postsToday').textContent = '?';
+      document.getElementById('activeMembers').textContent = '?';
+    });
+}
+
+// Load stats when page loads
+window.addEventListener('load', () => {
+  loadForumStats();
+});
+
+// Refresh stats every 30 seconds
+setInterval(loadForumStats, 30000);
+</script>
+    
 </body>
 </html>
