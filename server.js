@@ -7,13 +7,20 @@ const sqlite3 = require('sqlite3').verbose();
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ─────────────────────────────────────────────────────────────
+// Trust proxy for Hostinger
+app.set('trust proxy', 1);
+
+console.log('═══════════════════════════════════════════════════════════════════════════════');
+console.log('🚀 STARTING FORUM SERVER...');
+console.log('═══════════════════════════════════════════════════════════════════════════════');
+
 // EMAIL SETUP
-// ─────────────────────────────────────────────────────────────
+console.log('📧 Configuring email service...');
 const transporter = nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE || 'gmail',
   auth: {
@@ -22,27 +29,23 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Test email connection
 transporter.verify((error, success) => {
   if (error) {
-    console.log('⚠️ Email service not configured properly:', error.message);
+    console.log('⚠️ Email service issue:', error.message);
   } else {
     console.log('✅ Email service ready - can send emails!');
   }
 });
 
-// Email sending function
 async function sendEmail(to, subject, html) {
   try {
-    const mailOptions = {
+    await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: to,
       subject: subject,
       html: html
-    };
-
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent:', result.response);
+    });
+    console.log('✅ Email sent to:', to);
     return true;
   } catch (error) {
     console.error('❌ Email error:', error.message);
@@ -50,9 +53,8 @@ async function sendEmail(to, subject, html) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// SECURITY MIDDLEWARE
-// ─────────────────────────────────────────────────────────────
+// MIDDLEWARE
+console.log('🔒 Setting up security middleware...');
 app.use(helmet());
 app.use(cors({
   origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(','),
@@ -61,130 +63,126 @@ app.use(cors({
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500,
+  skip: (req, res) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health';
+  }
 });
 
 app.use(limiter);
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-// ─────────────────────────────────────────────────────────────
-// DATABASE SETUP
-// ─────────────────────────────────────────────────────────────
+// DATABASE
+console.log('💾 Initializing database...');
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'forum.db');
+console.log('📍 Database path:', dbPath);
+
 const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) console.error('Database connection error:', err);
-  else console.log('✅ Connected to SQLite database');
+  if (err) {
+    console.error('❌ Database connection error:', err);
+  } else {
+    console.log('✅ Connected to SQLite database');
+  }
 });
 
-// Initialize database tables
 function initializeDatabase() {
   db.serialize(() => {
-    // Users table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
-        username TEXT UNIQUE,
-        email TEXT UNIQUE,
-        password_hash TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY,
+      username TEXT UNIQUE,
+      email TEXT UNIQUE,
+      password_hash TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
 
-    // Posts table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS posts (
-        id INTEGER PRIMARY KEY,
-        title TEXT NOT NULL,
-        author_name TEXT NOT NULL,
-        author_email TEXT NOT NULL,
-        category TEXT NOT NULL,
-        description TEXT NOT NULL,
-        status TEXT DEFAULT 'pending',
-        helpful_count INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(title, author_email)
-      )
-    `);
+    db.run(`CREATE TABLE IF NOT EXISTS posts (
+      id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      author_email TEXT NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      helpful_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(title, author_email)
+    )`);
 
-    // Comments table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS comments (
-        id INTEGER PRIMARY KEY,
-        post_id INTEGER NOT NULL,
-        author_name TEXT NOT NULL,
-        author_email TEXT NOT NULL,
-        content TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
-      )
-    `);
+    db.run(`CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY,
+      post_id INTEGER NOT NULL,
+      author_name TEXT NOT NULL,
+      author_email TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
+    )`);
 
-    // Admin sessions table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS admin_sessions (
-        id INTEGER PRIMARY KEY,
-        token TEXT UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        expires_at DATETIME DEFAULT (datetime('now', '+24 hours'))
-      )
-    `);
+    db.run(`CREATE TABLE IF NOT EXISTS admin_sessions (
+      id INTEGER PRIMARY KEY,
+      token TEXT UNIQUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME DEFAULT (datetime('now', '+24 hours'))
+    )`);
 
-    // Subscribers table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS subscribers (
-        id INTEGER PRIMARY KEY,
-        email TEXT UNIQUE,
-        name TEXT,
-        subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        status TEXT DEFAULT 'active'
-      )
-    `);
+    db.run(`CREATE TABLE IF NOT EXISTS subscribers (
+      id INTEGER PRIMARY KEY,
+      email TEXT UNIQUE,
+      name TEXT,
+      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      status TEXT DEFAULT 'active'
+    )`);
 
-    console.log('✅ Database tables initialized');
+    console.log('✅ Database tables ready');
   });
 }
 
 initializeDatabase();
 
-// ─────────────────────────────────────────────────────────────
-// STATIC FILES & ROUTES
-// ─────────────────────────────────────────────────────────────
-
-// Serve all static files from root directory
+// STATIC FILES
 app.use(express.static(path.join(__dirname)));
 
-// Serve main index.html at root
+// ═══════════════════════════════════════════════════════════
+// HTML ROUTES
+// ═══════════════════════════════════════════════════════════
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Serve community main page
-app.get('/community/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'community', 'index.html'));
+app.get('/community', (req, res) => {
+  res.redirect('/community/');
 });
 
-// Serve admin panel
+app.get('/community/', (req, res) => {
+  const filePath = path.join(__dirname, 'community', 'index.html');
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Community page not found');
+  }
+});
+
 app.get('/community/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'community', 'admin.html'));
 });
 
-// ─────────────────────────────────────────────────────────────
-// API ROUTES - FORUM POSTS
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// API - POSTS
+// ═══════════════════════════════════════════════════════════
 
-// GET all posts
 app.get('/api/posts', (req, res) => {
   db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['approved'], (err, rows) => {
     if (err) {
-      console.error(err);
+      console.error('Error fetching posts:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     res.json(rows || []);
   });
 });
 
-// GET single post
 app.get('/api/posts/:id', (req, res) => {
   db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], (err, row) => {
     if (err) return res.status(500).json({ error: 'Database error' });
@@ -193,7 +191,6 @@ app.get('/api/posts/:id', (req, res) => {
   });
 });
 
-// POST new post (with email notification to admin)
 app.post('/api/posts', (req, res) => {
   const { title, author_name, author_email, category, description } = req.body;
   
@@ -207,62 +204,30 @@ app.post('/api/posts', (req, res) => {
     async function(err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
-          return res.status(400).json({ error: 'You have already posted this. Please wait for approval.' });
+          return res.status(400).json({ error: 'You have already posted this.' });
         }
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // Send confirmation email to user
-      const userEmailHtml = `
-        <h2>Thank you for your post! 🎉</h2>
-        <p>Hi ${author_name},</p>
-        <p>Your post "<strong>${title}</strong>" has been submitted to the India Digital Marketing Forum.</p>
-        <p><strong>Status:</strong> Awaiting moderation review</p>
-        <p>Our team will review your post and it will be visible to the community once approved.</p>
-        <hr>
-        <p><strong>Post Details:</strong></p>
-        <p><strong>Category:</strong> ${category}</p>
-        <p><strong>Description:</strong> ${description}</p>
-        <hr>
-        <p>Thank you for contributing to our community!</p>
-        <p>Best regards,<br>India Digital Marketing Forum Team</p>
-      `;
+      await sendEmail(author_email, 'Post Submitted', `<h2>Thank you!</h2><p>Your post has been submitted for review.</p>`);
+      await sendEmail(process.env.EMAIL_USER, `New Post: ${title}`, `<h2>New post from ${author_name}</h2><p>${description}</p>`);
 
-      await sendEmail(author_email, 'Post Submitted Successfully', userEmailHtml);
-
-      // Send notification email to admin
-      const adminEmailHtml = `
-        <h2>New Post Pending Review 📝</h2>
-        <p><strong>Author:</strong> ${author_name}</p>
-        <p><strong>Email:</strong> ${author_email}</p>
-        <p><strong>Title:</strong> ${title}</p>
-        <p><strong>Category:</strong> ${category}</p>
-        <p><strong>Description:</strong></p>
-        <p>${description}</p>
-        <hr>
-        <p><a href="https://indiadigitalmarketingforum.org/community/admin.html">Review in Admin Panel</a></p>
-      `;
-
-      await sendEmail(process.env.EMAIL_USER, `New Forum Post: ${title}`, adminEmailHtml);
-
-      res.status(201).json({ id: this.lastID, message: 'Post submitted! Awaiting approval. Check your email for confirmation.' });
+      res.status(201).json({ id: this.lastID, message: 'Post submitted! Awaiting approval.' });
     }
   );
 });
 
-// Mark post as helpful
 app.post('/api/posts/:id/helpful', (req, res) => {
   db.run('UPDATE posts SET helpful_count = helpful_count + 1 WHERE id = ?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Database error' });
-    res.json({ message: 'Helpful count updated' });
+    res.json({ message: 'Updated' });
   });
 });
 
-// ─────────────────────────────────────────────────────────────
-// API ROUTES - NEWSLETTER SUBSCRIPTION
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// API - NEWSLETTER
+// ═══════════════════════════════════════════════════════════
 
-// Subscribe to newsletter
 app.post('/api/subscribe', (req, res) => {
   const { email, name } = req.body;
 
@@ -281,34 +246,13 @@ app.post('/api/subscribe', (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // Send welcome email
-      const emailHtml = `
-        <h2>Welcome to India Digital Marketing Forum! 🎉</h2>
-        <p>Hi ${name || 'Friend'},</p>
-        <p>Thank you for subscribing to our newsletter!</p>
-        <p>You'll receive monthly insights, trends, and exclusive content from our community.</p>
-        <hr>
-        <p><strong>What to expect:</strong></p>
-        <ul>
-          <li>Latest platform algorithm updates (Meta, Google, YouTube)</li>
-          <li>India-specific marketing case studies</li>
-          <li>Emerging tools and MarTech news</li>
-          <li>Exclusive insights from our speaker community</li>
-          <li>Job opportunities and community events</li>
-        </ul>
-        <hr>
-        <p><a href="https://indiadigitalmarketingforum.org/community/">Visit Our Forum</a></p>
-        <p>Best regards,<br>India Digital Marketing Forum Team</p>
-      `;
-
-      await sendEmail(email, 'Welcome to Our Newsletter!', emailHtml);
+      await sendEmail(email, 'Welcome!', `<h2>Welcome to India Digital Marketing Forum!</h2><p>Thank you for subscribing!</p>`);
 
       res.status(201).json({ message: 'Successfully subscribed! Check your email.' });
     }
   );
 });
 
-// Get subscriber count
 app.get('/api/subscribers/count', (req, res) => {
   db.all('SELECT COUNT(*) as count FROM subscribers WHERE status = ?', ['active'], (err, rows) => {
     if (err) return res.status(500).json({ error: 'Database error' });
@@ -316,12 +260,11 @@ app.get('/api/subscribers/count', (req, res) => {
   });
 });
 
-// Admin: Get all subscribers
 app.get('/api/admin/subscribers', (req, res) => {
   const token = req.headers['x-admin-token'];
   
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    return res.status(401).json({ error: 'No token' });
   }
 
   db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
@@ -334,194 +277,189 @@ app.get('/api/admin/subscribers', (req, res) => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────
-// API ROUTES - ADMIN PANEL
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// API - ADMIN
+// ═══════════════════════════════════════════════════════════
 
-// Admin login
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-
-  if (password !== adminPassword) {
+  if (password !== process.env.ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Invalid password' });
   }
 
-  const token = generateToken();
+  const token = Math.random().toString(36).substr(2) + Date.now().toString(36);
   db.run('INSERT INTO admin_sessions (token) VALUES (?)', [token], (err) => {
     if (err) return res.status(500).json({ error: 'Session error' });
     res.json({ token, message: 'Login successful' });
   });
 });
 
-// Get pending posts
+// ⭐ PENDING POSTS
 app.get('/api/admin/posts/pending', (req, res) => {
   const token = req.headers['x-admin-token'];
-  
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    console.log('❌ No token for pending posts');
+    return res.status(401).json({ error: 'No token' });
   }
 
   db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+    if (err || !session) {
+      console.log('❌ Invalid token for pending posts');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['pending'], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
+      if (err) {
+        console.error('Error fetching pending posts:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      console.log('✅ Returning pending posts:', rows?.length || 0);
       res.json(rows || []);
     });
   });
 });
 
-// Approve post (with email notification to author)
+// ⭐ APPROVED POSTS (THIS WAS MISSING!)
+app.get('/api/admin/posts/approved', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (!token) {
+    console.log('❌ No token for approved posts');
+    return res.status(401).json({ error: 'No token' });
+  }
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) {
+      console.log('❌ Invalid token for approved posts');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['approved'], (err, rows) => {
+      if (err) {
+        console.error('Error fetching approved posts:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      console.log('✅ Returning approved posts:', rows?.length || 0);
+      res.json(rows || []);
+    });
+  });
+});
+
+// APPROVE POST
 app.post('/api/admin/posts/:id/approve', (req, res) => {
   const token = req.headers['x-admin-token'];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
+  if (!token) return res.status(401).json({ error: 'No token' });
 
   db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
     if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
 
-    // Get post details for email
     db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
       if (err || !post) return res.status(500).json({ error: 'Post not found' });
 
       db.run('UPDATE posts SET status = ? WHERE id = ?', ['approved', req.params.id], async (err) => {
         if (err) return res.status(500).json({ error: 'Database error' });
 
-        // Send approval email to author
-        const emailHtml = `
-          <h2>Your Post Has Been Approved! 🎉</h2>
-          <p>Hi ${post.author_name},</p>
-          <p>Great news! Your post "<strong>${post.title}</strong>" has been approved and is now live in the community.</p>
-          <p>Your post is now visible to all members of the India Digital Marketing Forum.</p>
-          <hr>
-          <p><a href="https://indiadigitalmarketingforum.org/community/">Visit the Forum</a></p>
-          <p>Thank you for your contribution!</p>
-        `;
+        await sendEmail(post.author_email, 'Your Post Approved!', `<h2>Your post has been approved!</h2>`);
 
-        await sendEmail(post.author_email, 'Your Post Has Been Approved!', emailHtml);
-
-        res.json({ message: 'Post approved and author notified' });
+        res.json({ message: 'Post approved' });
       });
     });
   });
 });
 
-// Delete/Reject post (with email notification to author)
+// DELETE PENDING POST (REJECT)
 app.delete('/api/admin/posts/:id', (req, res) => {
   const token = req.headers['x-admin-token'];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
+  if (!token) return res.status(401).json({ error: 'No token' });
 
   db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
     if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
 
-    // Get post details for email
     db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
       if (err || !post) return res.status(500).json({ error: 'Post not found' });
 
       db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
         if (err) return res.status(500).json({ error: 'Database error' });
 
-        // Send rejection email to author
-        const emailHtml = `
-          <h2>Post Review Update</h2>
-          <p>Hi ${post.author_name},</p>
-          <p>Thank you for your submission. Unfortunately, your post "<strong>${post.title}</strong>" did not meet our community guidelines and has not been approved.</p>
-          <p>Please review our guidelines and feel free to submit another post that aligns with our community values.</p>
-          <hr>
-          <p>If you have any questions, please contact us.</p>
-        `;
+        await sendEmail(post.author_email, 'Post Rejected', `<h2>Your post was rejected</h2>`);
 
-        await sendEmail(post.author_email, 'Post Review Decision', emailHtml);
-
-        res.json({ message: 'Post deleted and author notified' });
+        res.json({ message: 'Post deleted' });
       });
     });
   });
 });
 
-// Get forum stats
+// DELETE APPROVED POST
+app.delete('/api/admin/posts/approved/:id', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.get('SELECT * FROM posts WHERE id = ? AND status = ?', [req.params.id, 'approved'], async (err, post) => {
+      if (err || !post) return res.status(500).json({ error: 'Post not found' });
+
+      db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+
+        await sendEmail(post.author_email, 'Post Removed', `<h2>Your post was removed</h2>`);
+
+        res.json({ message: 'Post deleted' });
+      });
+    });
+  });
+});
+
+// STATISTICS
 app.get('/api/admin/stats', (req, res) => {
-  db.all('SELECT COUNT(*) as total FROM posts', (err, totalRows) => {
-    db.all('SELECT COUNT(*) as today FROM posts WHERE DATE(created_at) = DATE("now")', (err, todayRows) => {
-      db.all('SELECT COUNT(DISTINCT author_email) as members FROM posts', (err, membersRows) => {
-        res.json({
-          total_posts: totalRows?.[0]?.total || 0,
-          posts_today: todayRows?.[0]?.today || 0,
-          active_members: membersRows?.[0]?.members || 0
+  const token = req.headers['x-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.all('SELECT COUNT(*) as total FROM posts', (err, totalRows) => {
+      db.all('SELECT COUNT(*) as today FROM posts WHERE DATE(created_at) = DATE("now")', (err, todayRows) => {
+        db.all('SELECT COUNT(DISTINCT author_email) as members FROM posts', (err, membersRows) => {
+          res.json({
+            total_posts: totalRows?.[0]?.total || 0,
+            posts_today: todayRows?.[0]?.today || 0,
+            active_members: membersRows?.[0]?.members || 0
+          });
         });
       });
     });
   });
 });
 
-// ─────────────────────────────────────────────────────────────
-// UTILITY FUNCTIONS
-// ─────────────────────────────────────────────────────────────
-
-function generateToken() {
-  return Math.random().toString(36).substr(2) + Date.now().toString(36);
-}
-
-// ─────────────────────────────────────────────────────────────
-// API DOCS
-// ─────────────────────────────────────────────────────────────
-app.get('/api/docs', (req, res) => {
-  res.json({
-    api_version: '1.0.0',
-    features: ['Email notifications', 'Newsletter subscription', 'Post moderation', 'Forum statistics'],
-    endpoints: {
-      posts: {
-        'GET /api/posts': 'Get all approved posts',
-        'GET /api/posts/:id': 'Get specific post',
-        'POST /api/posts': 'Create new post (sends email confirmation)',
-        'POST /api/posts/:id/helpful': 'Mark as helpful'
-      },
-      subscription: {
-        'POST /api/subscribe': 'Subscribe to newsletter',
-        'GET /api/subscribers/count': 'Get subscriber count',
-        'GET /api/admin/subscribers': 'Get all subscribers (admin only)'
-      },
-      admin: {
-        'POST /api/admin/login': 'Admin login',
-        'GET /api/admin/posts/pending': 'Get pending posts',
-        'POST /api/admin/posts/:id/approve': 'Approve post (sends approval email)',
-        'DELETE /api/admin/posts/:id': 'Delete post (sends rejection email)',
-        'GET /api/admin/stats': 'Get forum statistics'
-      }
-    }
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // ERROR HANDLING
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error('Error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 app.use((req, res) => {
+  console.log('404 - Not found:', req.path);
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // START SERVER
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 app.listen(PORT, () => {
   console.log('═══════════════════════════════════════════════════════════════════════════════');
-  console.log('🚀 FORUM SERVER WITH EMAIL & NEWSLETTER RUNNING');
+  console.log('✅ FORUM SERVER RUNNING');
   console.log('═══════════════════════════════════════════════════════════════════════════════');
   console.log(`✅ Server: http://localhost:${PORT}`);
-  console.log(`✅ Main page: http://localhost:${PORT}/`);
+  console.log(`✅ Main: http://localhost:${PORT}/`);
   console.log(`✅ Community: http://localhost:${PORT}/community/`);
-  console.log(`✅ Email: Configured with ${process.env.EMAIL_SERVICE}`);
-  console.log(`✅ Newsletter: Subscription enabled`);
+  console.log(`✅ Email: ${process.env.EMAIL_SERVICE}`);
+  console.log(`✅ Database: ${dbPath}`);
+  console.log('═══════════════════════════════════════════════════════════════════════════════');
+  console.log('✅ Newsletter: Subscription enabled');
   console.log(`✅ Database: ${dbPath}`);
   console.log('═══════════════════════════════════════════════════════════════════════════════');
 });
