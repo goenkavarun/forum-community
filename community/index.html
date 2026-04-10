@@ -545,5 +545,36 @@
             loadStats();
         }, 30000);
     </script>
+
+    <script>
+async function footerSubscribe() {
+  const email = document.getElementById('footer-email').value;
+  const name = prompt('Your name (optional):') || 'Subscriber';
+
+  if (!email) {
+    alert('Please enter your email');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert('✅ ' + data.message);
+      document.getElementById('footer-email').value = '';
+    } else {
+      alert('❌ ' + data.error);
+    }
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+}
+</script>
 </body>
 </html>
