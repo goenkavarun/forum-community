@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - India Digital Marketing Forum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.5em;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #FF6B00;
+            border-bottom-color: #FF6B00;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .posts-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .post-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid #FF6B00;
+        }
+
+        .post-title {
+            color: #0B1B3E;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        .post-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .post-category {
+            display: inline-block;
+            background: #FF6B00;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-approve {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #45a049;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+        }
+
+        .btn-export {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #0b7dda;
+        }
+
+        .btn-back {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #0b7dda;
+        }
+
+        .subscribers-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table-header h3 {
+            color: #0B1B3E;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9f9f9;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            color: #0B1B3E;
+            border-bottom: 2px solid #eee;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            color: #FF6B00;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            color: #999;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .subscriber-count {
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .post-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔐 Admin Panel</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </header>
+
+    <div class="container">
+        <div id="message" class="message"></div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('pending')">⏳ Pending Posts</button>
+            <button class="tab-btn" onclick="switchTab('approved')">✅ Approved Posts</button>
+            <button class="tab-btn" onclick="switchTab('subscribers')">📧 Subscribers</button>
+            <button class="tab-btn" onclick="switchTab('stats')">📊 Statistics</button>
+        </div>
+
+        <!-- Pending Posts Tab -->
+        <div id="pending" class="tab-content active">
+            <div class="posts-grid" id="pendingPosts">
+                <div class="empty-state">Loading pending posts...</div>
+            </div>
+        </div>
+
+        <!-- Approved Posts Tab -->
+        <div id="approved" class="tab-content">
+            <div class="posts-grid" id="approvedPosts">
+                <div class="empty-state">Loading approved posts...</div>
+            </div>
+        </div>
+
+        <!-- Subscribers Tab -->
+        <div id="subscribers" class="tab-content">
+            <div class="subscribers-table">
+                <div class="table-header">
+                    <h3>📧 Newsletter Subscribers</h3>
+                    <button class="btn btn-export" onclick="exportSubscribers()">
+                        📥 Export as CSV
+                    </button>
+                </div>
+                <div class="subscriber-count" style="margin: 20px; text-align: center;">
+                    Total Subscribers: <span id="subscriberCount">0</span>
+                </div>
+                <div class="table-wrapper">
+                    <table id="subscribersTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Email</th>
+                                <th>Name</th>
+                                <th>Subscribed On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subscribersBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: #999;">Loading subscribers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="stats" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="statTotal">-</div>
+                    <div class="stat-label">Total Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statToday">-</div>
+                    <div class="stat-label">Posts Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statMembers">-</div>
+                    <div class="stat-label">Active Members</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statSubscribers">-</div>
+                    <div class="stat-label">Newsletter Subscribers</div>
+                </div>
+            </div>
+
+            <button class="btn btn-back" onclick="goBack()" style="width: 150px;">← Back to Forum</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const adminToken = sessionStorage.getItem('adminToken');
+
+        // Check authentication
+        if (!adminToken) {
+            alert('⚠️ Unauthorized. Redirecting...');
+            window.location.href = 'index.html';
+        }
+
+        // Load data on page load
+        window.onload = () => {
+            loadPendingPosts();
+            loadApprovedPosts();
+            loadSubscribers();
+            loadStats();
+        };
+
+        // Switch tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load pending posts
+        function loadPendingPosts() {
+            fetch(`${API_BASE}/admin/posts/pending`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(posts => {
+                if (posts.length === 0) {
+                    document.getElementById('pendingPosts').innerHTML = `
+                        <div class="empty-state">
+                            ✅ No pending posts! All posts have been reviewed.
+                        </div>
+                    `;
+                    return;
+                }
+
+                document.getElementById('pendingPosts').innerHTML = posts.map(post => `
+                    <div class="post-card">
+                        <div class="post-title">${escapeHtml(post.title)}</div>
+                        <div class="post-meta">
+                            By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)}) • 
+                            ${new Date(post.created_at).toLocaleDateString()}
+                        </div>
+                        <div class="post-description">${escapeHtml(post.description)}</div>
+                        <span class="post-category">${escapeHtml(post.category)}</span>
+                        <div class="post-actions">
+                            <button class="btn btn-approve" onclick="approvePost(${post.id})">
+                                ✅ Approve
+                            </button>
+                            <button class="btn btn-delete" onclick="deletePost(${post.id})">
+                                🗑️ Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => showMessage('❌ Error loading posts: ' + err.message, 'error'));
+        }
+
+        // Load approved posts
+        function loadApprovedPosts() {
+            fetch(`${API_BASE}/admin/posts/approved`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(posts => {
+                if (posts.length === 0) {
+                    document.getElementById('approvedPosts').innerHTML = `
+                        <div class="empty-state">
+                            No approved posts yet.
+                        </div>
+                    `;
+                    return;
+                }
+
+                document.getElementById('approvedPosts').innerHTML = posts.map(post => `
+                    <div class="post-card">
+                        <div class="post-title">${escapeHtml(post.title)}</div>
+                        <div class="post-meta">
+                            By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)}) • 
+                            ${new Date(post.created_at).toLocaleDateString()}
+                        </div>
+                        <div class="post-description">${escapeHtml(post.description)}</div>
+                        <span class="post-category">${escapeHtml(post.category)}</span>
+                        <div class="post-actions">
+                            <button class="btn btn-delete" onclick="deleteApprovedPost(${post.id})">
+                                🗑️ Delete Post
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => showMessage('❌ Error loading posts: ' + err.message, 'error'));
+        }
+
+        // Load subscribers
+        function loadSubscribers() {
+            fetch(`${API_BASE}/admin/subscribers`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(subscribers => {
+                document.getElementById('subscriberCount').textContent = subscribers.length;
+
+                if (subscribers.length === 0) {
+                    document.getElementById('subscribersBody').innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #999;">No subscribers yet.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                document.getElementById('subscribersBody').innerHTML = subscribers.map((sub, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${escapeHtml(sub.email)}</strong></td>
+                        <td>${escapeHtml(sub.name)}</td>
+                        <td>${new Date(sub.subscribed_at).toLocaleDateString()} ${new Date(sub.subscribed_at).toLocaleTimeString()}</td>
+                    </tr>
+                `).join('');
+            })
+            .catch(err => showMessage('❌ Error loading subscribers: ' + err.message, 'error'));
+        }
+
+        // Export subscribers as CSV
+        function exportSubscribers() {
+            fetch(`${API_BASE}/admin/subscribers`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(subscribers => {
+                if (subscribers.length === 0) {
+                    alert('No subscribers to export');
+                    return;
+                }
+
+                // Create CSV content
+                let csv = 'Email,Name,Subscribed On\n';
+                subscribers.forEach(sub => {
+                    csv += `"${sub.email}","${sub.name}","${sub.subscribed_at}"\n`;
+                });
+
+                // Create blob and download
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `subscribers-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showMessage('✅ Subscribers exported as CSV!', 'success');
+            })
+            .catch(err => showMessage('❌ Error exporting: ' + err.message, 'error'));
+        }
+
+        // Load statistics
+        function loadStats() {
+            fetch(`${API_BASE}/admin/stats`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(stats => {
+                document.getElementById('statTotal').textContent = stats.total_posts || 0;
+                document.getElementById('statToday').textContent = stats.posts_today || 0;
+                document.getElementById('statMembers').textContent = stats.active_members || 0;
+            })
+            .catch(err => {
+                document.getElementById('statTotal').textContent = '?';
+                document.getElementById('statToday').textContent = '?';
+                document.getElementById('statMembers').textContent = '?';
+            });
+
+            // Get subscriber count for stats
+            fetch(`${API_BASE}/subscribers/count`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('statSubscribers').textContent = data.count || 0;
+            })
+            .catch(err => {
+                document.getElementById('statSubscribers').textContent = '?';
+            });
+        }
+
+        // Approve post
+        function approvePost(postId) {
+            if (!confirm('Approve this post?')) return;
+
+            fetch(`${API_BASE}/admin/posts/${postId}/approve`, {
+                method: 'POST',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showMessage('✅ Post approved!', 'success');
+                loadPendingPosts();
+                loadApprovedPosts();
+                loadStats();
+            })
+            .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+        }
+
+        // Delete/Reject pending post
+        function deletePost(postId) {
+            if (!confirm('Reject this post?')) return;
+
+            fetch(`${API_BASE}/admin/posts/${postId}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showMessage('✅ Post rejected!', 'success');
+                loadPendingPosts();
+                loadStats();
+            })
+            .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+        }
+
+        // Delete approved post
+        function deleteApprovedPost(postId) {
+            if (!confirm('Delete this approved post? Author will be notified.')) return;
+
+            fetch(`${API_BASE}/admin/posts/approved/${postId}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showMessage('✅ Post deleted!', 'success');
+                loadApprovedPosts();
+                loadStats();
+            })
+            .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+        }
+
+        // Logout
+        function logout() {
+            sessionStorage.removeItem('adminToken');
+            window.location.href = 'index.html';
+        }
+
+        // Go back to forum
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // Utility functions
+        function showMessage(msg, type) {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = msg;
+            msgEl.className = `message ${type}`;
+            setTimeout(() => { msgEl.className = 'message'; }, 4000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            loadPendingPosts();
+            loadApprovedPosts();
+            loadSubscribers();
+            loadStats();
+        }, 30000);
+    </script>
+</body>
+</html>
