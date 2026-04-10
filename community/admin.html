@@ -298,9 +298,11 @@
 
         // Load data on page load
         window.onload = () => {
-            loadPendingPosts();
-            loadStats();
-        };
+  loadPendingPosts();
+  loadStats();
+  // Load approved posts too
+  loadApprovedPosts();
+};
 
         // Switch tabs
         function switchTab(tab) {
@@ -310,6 +312,88 @@
             event.target.classList.add('active');
         }
 
+        // Load posts when switching tabs
+document.addEventListener('DOMContentLoaded', () => {
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const tab = e.target.getAttribute('onclick').match(/'([^']+)'/)[1];
+      if (tab === 'approved') loadApprovedPosts();
+      if (tab === 'pending') loadPendingPosts();
+      if (tab === 'stats') loadStats();
+    });
+  });
+});
+        // Load approved posts
+function loadApprovedPosts() {
+  fetch(`${API_BASE}/admin/posts/approved`, {
+    headers: { 'X-Admin-Token': adminToken }
+  })
+  .then(res => res.json())
+  .then(posts => {
+    if (posts.length === 0) {
+      document.getElementById('approvedPosts').innerHTML = `
+        <div class="empty-state">
+          No approved posts yet.
+        </div>
+      `;
+      return;
+    }
+
+    document.getElementById('approvedPosts').innerHTML = posts.map(post => `
+      <div class="post-card">
+        <div class="post-title">${escapeHtml(post.title)}</div>
+        <div class="post-meta">
+          By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)}) • 
+          ${new Date(post.created_at).toLocaleDateString()}
+        </div>
+        <div class="post-description">${escapeHtml(post.description)}</div>
+        <span class="post-category">${escapeHtml(post.category)}</span>
+        <div class="post-actions">
+          <button class="btn btn-delete" onclick="deleteApprovedPost(${post.id})">
+            🗑️ Delete Post
+          </button>
+        </div>
+      </div>
+    `).join('');
+  })
+  .catch(err => showMessage('❌ Error loading posts: ' + err.message, 'error'));
+}
+        // Load approved posts
+function loadApprovedPosts() {
+  fetch(`${API_BASE}/admin/posts/approved`, {
+    headers: { 'X-Admin-Token': adminToken }
+  })
+  .then(res => res.json())
+  .then(posts => {
+    if (posts.length === 0) {
+      document.getElementById('approvedPosts').innerHTML = `
+        <div class="empty-state">
+          No approved posts yet.
+        </div>
+      `;
+      return;
+    }
+
+    document.getElementById('approvedPosts').innerHTML = posts.map(post => `
+      <div class="post-card">
+        <div class="post-title">${escapeHtml(post.title)}</div>
+        <div class="post-meta">
+          By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)}) • 
+          ${new Date(post.created_at).toLocaleDateString()}
+        </div>
+        <div class="post-description">${escapeHtml(post.description)}</div>
+        <span class="post-category">${escapeHtml(post.category)}</span>
+        <div class="post-actions">
+          <button class="btn btn-delete" onclick="deleteApprovedPost(${post.id})">
+            🗑️ Delete Post
+          </button>
+        </div>
+      </div>
+    `).join('');
+  })
+  .catch(err => showMessage('❌ Error loading posts: ' + err.message, 'error'));
+}
         // Load pending posts
         function loadPendingPosts() {
             fetch(`${API_BASE}/admin/posts/pending`, {
@@ -400,7 +484,40 @@
             })
             .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
         }
+// Delete/Reject post
+function deletePost(postId) {
+  if (!confirm('Reject this post?')) return;
 
+  fetch(`${API_BASE}/admin/posts/${postId}`, {
+    method: 'DELETE',
+    headers: { 'X-Admin-Token': adminToken }
+  })
+  .then(res => res.json())
+  .then(data => {
+    showMessage('✅ Post rejected!', 'success');
+    loadPendingPosts();
+    loadStats();
+  })
+  .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+}
+
+// ← CODE 5 GOES HERE (right after closing })
+
+// Delete approved post
+function deleteApprovedPost(postId) {
+  if (!confirm('Delete this approved post? Author will be notified.')) return;
+
+  fetch(`${API_BASE}/admin/posts/approved/${postId}`, {
+    method: 'DELETE',
+    headers: { 'X-Admin-Token': adminToken }
+  })
+  .then(res => res.json())
+  .then(data => {
+    showMessage('✅ Post deleted!', 'success');
+    loadApprovedPosts();
+  })
+  .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+}
         // Logout
         function logout() {
             sessionStorage.removeItem('adminToken');
