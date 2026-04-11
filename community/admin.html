@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - India Digital Marketing Forum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.5em;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #FF6B00;
+            border-bottom-color: #FF6B00;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .search-box button {
+            padding: 12px 20px;
+            background: #FF6B00;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .search-box button:hover {
+            background: #E55A00;
+        }
+
+        .posts-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .post-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid #FF6B00;
+        }
+
+        .post-title {
+            color: #0B1B3E;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        .post-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .post-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .post-category {
+            display: inline-block;
+            background: #FF6B00;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-approve {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #45a049;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+        }
+
+        .btn-add {
+            background: #2196F3;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-add:hover {
+            background: #0b7dda;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #0B1B3E;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .co-admin-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9f9f9;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            color: #0B1B3E;
+            border-bottom: 2px solid #eee;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            color: #FF6B00;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .empty-state {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            color: #999;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .post-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+
+            .form-group input {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>👑 Main Admin Panel</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </header>
+
+    <div class="container">
+        <div id="message" class="message"></div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('pending')">⏳ Pending Posts</button>
+            <button class="tab-btn" onclick="switchTab('approved')">✅ Approved Posts</button>
+            <button class="tab-btn" onclick="switchTab('subscribers')">📧 Subscribers</button>
+            <button class="tab-btn" onclick="switchTab('co-admins')">👥 Manage Co-Admins</button>
+            <button class="tab-btn" onclick="switchTab('stats')">📊 Statistics</button>
+        </div>
+
+        <!-- Pending Posts -->
+        <div id="pending" class="tab-content active">
+            <div class="posts-grid" id="pendingPosts">
+                <div class="empty-state">Loading pending posts...</div>
+            </div>
+        </div>
+
+        <!-- Approved Posts -->
+        <div id="approved" class="tab-content">
+            <div class="posts-grid" id="approvedPosts">
+                <div class="empty-state">Loading approved posts...</div>
+            </div>
+        </div>
+
+        <!-- Subscribers -->
+        <div id="subscribers" class="tab-content">
+            <div class="form-section">
+                <h3>📧 Newsletter Subscribers</h3>
+                <p style="margin: 20px 0; text-align: center; font-weight: bold; color: #FF6B00;">
+                    Total: <span id="subscriberCount">0</span>
+                </p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Email</th>
+                                <th>Name</th>
+                                <th>Subscribed</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subscribersBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Co-Admins Management -->
+        <div id="co-admins" class="tab-content">
+            <div class="form-section">
+                <h3>➕ Create Co-Admin</h3>
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="coAdminUsername" placeholder="Username">
+                </div>
+                <div class="form-group">
+                    <label>Password (min 6 chars):</label>
+                    <input type="password" id="coAdminPassword" placeholder="Password">
+                </div>
+                <div class="form-group">
+                    <label>Email (optional):</label>
+                    <input type="email" id="coAdminEmail" placeholder="Email">
+                </div>
+                <button class="btn btn-add" onclick="createCoAdmin()">✅ Create Co-Admin</button>
+            </div>
+
+            <div class="form-section">
+                <h3>👥 Active Co-Admins</h3>
+                <p style="margin: 20px 0; text-align: center; font-weight: bold; color: #FF6B00;">
+                    Total: <span id="coAdminCount">0</span>/15
+                </p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Created</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coAdminsBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div id="stats" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="statTotal">-</div>
+                    <div class="stat-label">Total Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statToday">-</div>
+                    <div class="stat-label">Posts Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statMembers">-</div>
+                    <div class="stat-label">Active Members</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statSubscribers">-</div>
+                    <div class="stat-label">Subscribers</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const adminToken = sessionStorage.getItem('adminToken');
+
+        if (!adminToken) {
+            alert('⚠️ Unauthorized');
+            window.location.href = 'index.html';
+        }
+
+        window.onload = () => {
+            loadPendingPosts();
+            loadApprovedPosts();
+            loadSubscribers();
+            loadCoAdmins();
+            loadStats();
+        };
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function loadPendingPosts() {
+            fetch(`${API_BASE}/admin/posts/pending`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(posts => {
+                if (!Array.isArray(posts)) posts = [];
+                if (posts.length === 0) {
+                    document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">✅ No pending posts</div>';
+                    return;
+                }
+                document.getElementById('pendingPosts').innerHTML = posts.map(post => `
+                    <div class="post-card">
+                        <div class="post-title">${escapeHtml(post.title)}</div>
+                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                        <span class="post-category">${escapeHtml(post.category)}</span>
+                        <div class="post-description">${escapeHtml(post.description)}</div>
+                        ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
+                        <div class="post-actions">
+                            <button class="btn btn-approve" onclick="approvePost(${post.id})">✅ Approve</button>
+                            <button class="btn btn-delete" onclick="deletePost(${post.id})">🗑️ Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => showMessage('Error loading posts', 'error'));
+        }
+
+        function loadApprovedPosts() {
+            fetch(`${API_BASE}/admin/posts/approved`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(posts => {
+                if (!Array.isArray(posts)) posts = [];
+                if (posts.length === 0) {
+                    document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
+                    return;
+                }
+                document.getElementById('approvedPosts').innerHTML = posts.map(post => `
+                    <div class="post-card">
+                        <div class="post-title">${escapeHtml(post.title)}</div>
+                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                        <span class="post-category">${escapeHtml(post.category)}</span>
+                        <div class="post-description">${escapeHtml(post.description)}</div>
+                        ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
+                        <div class="post-actions">
+                            <button class="btn btn-delete" onclick="deleteApprovedPost(${post.id})">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => showMessage('Error loading posts', 'error'));
+        }
+
+        function loadSubscribers() {
+            fetch(`${API_BASE}/admin/subscribers`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(subs => {
+                if (!Array.isArray(subs)) subs = [];
+                document.getElementById('subscriberCount').textContent = subs.length;
+                document.getElementById('subscribersBody').innerHTML = subs.length === 0 
+                    ? '<tr><td colspan="4" style="text-align: center;">No subscribers</td></tr>'
+                    : subs.map((s, i) => `<tr><td>${i+1}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.name)}</td><td>${new Date(s.subscribed_at).toLocaleDateString()}</td></tr>`).join('');
+            })
+            .catch(err => showMessage('Error loading subscribers', 'error'));
+        }
+
+        function loadCoAdmins() {
+            fetch(`${API_BASE}/admin/co-admins`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(admins => {
+                if (!Array.isArray(admins)) admins = [];
+                document.getElementById('coAdminCount').textContent = admins.length;
+                document.getElementById('coAdminsBody').innerHTML = admins.length === 0
+                    ? '<tr><td colspan="5" style="text-align: center;">No co-admins yet</td></tr>'
+                    : admins.map((a, i) => `<tr><td>${i+1}</td><td><strong>${escapeHtml(a.username)}</strong></td><td>${escapeHtml(a.email || '-')}</td><td>${new Date(a.created_at).toLocaleDateString()}</td><td><button class="btn btn-delete" onclick="deleteCoAdmin(${a.id})">Delete</button></td></tr>`).join('');
+            })
+            .catch(err => showMessage('Error loading co-admins', 'error'));
+        }
+
+        function createCoAdmin() {
+            const username = document.getElementById('coAdminUsername').value;
+            const password = document.getElementById('coAdminPassword').value;
+            const email = document.getElementById('coAdminEmail').value;
+
+            if (!username || !password || password.length < 6) {
+                showMessage('Username and password (min 6 chars) required', 'error');
+                return;
+            }
+
+            fetch(`${API_BASE}/admin/co-admins`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Token': adminToken
+                },
+                body: JSON.stringify({ username, password, email: email || null })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage('❌ ' + data.error, 'error');
+                } else {
+                    showMessage('✅ Co-admin created', 'success');
+                    document.getElementById('coAdminUsername').value = '';
+                    document.getElementById('coAdminPassword').value = '';
+                    document.getElementById('coAdminEmail').value = '';
+                    loadCoAdmins();
+                }
+            })
+            .catch(err => showMessage('Error creating co-admin', 'error'));
+        }
+
+        function deleteCoAdmin(id) {
+            if (!confirm('Delete this co-admin?')) return;
+
+            fetch(`${API_BASE}/admin/co-admins/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showMessage('✅ Co-admin deleted', 'success');
+                loadCoAdmins();
+            })
+            .catch(err => showMessage('Error deleting co-admin', 'error'));
+        }
+
+        function approvePost(id) {
+            if (!confirm('Approve this post?')) return;
+            fetch(`${API_BASE}/admin/posts/${id}/approve`, {
+                method: 'POST',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showMessage('✅ Post approved', 'success');
+                loadPendingPosts();
+                loadApprovedPosts();
+            })
+            .catch(err => showMessage('Error', 'error'));
+        }
+
+        function deletePost(id) {
+            if (!confirm('Reject this post?')) return;
+            fetch(`${API_BASE}/admin/posts/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showMessage('✅ Post rejected', 'success');
+                loadPendingPosts();
+            })
+            .catch(err => showMessage('Error', 'error'));
+        }
+
+        function deleteApprovedPost(id) {
+            if (!confirm('Delete this post?')) return;
+            fetch(`${API_BASE}/admin/posts/approved/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showMessage('✅ Post deleted', 'success');
+                loadApprovedPosts();
+            })
+            .catch(err => showMessage('Error', 'error'));
+        }
+
+        function loadStats() {
+            fetch(`${API_BASE}/admin/stats`, {
+                headers: { 'X-Admin-Token': adminToken }
+            })
+            .then(r => r.json())
+            .then(stats => {
+                document.getElementById('statTotal').textContent = stats.total_posts || 0;
+                document.getElementById('statToday').textContent = stats.posts_today || 0;
+                document.getElementById('statMembers').textContent = stats.active_members || 0;
+            })
+            .catch(err => {});
+
+            fetch(`${API_BASE}/subscribers/count`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('statSubscribers').textContent = data.count || 0;
+            })
+            .catch(err => {});
+        }
+
+        function logout() {
+            sessionStorage.removeItem('adminToken');
+            window.location.href = 'index.html';
+        }
+
+        function showMessage(msg, type) {
+            const el = document.getElementById('message');
+            el.textContent = msg;
+            el.className = `message ${type}`;
+            setTimeout(() => { el.className = 'message'; }, 4000);
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        setInterval(() => {
+            loadPendingPosts();
+            loadApprovedPosts();
+            loadSubscribers();
+            loadCoAdmins();
+            loadStats();
+        }, 30000);
+    </script>
+</body>
+</html>
