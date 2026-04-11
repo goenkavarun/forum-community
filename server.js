@@ -9,35 +9,29 @@ const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const multer = require('multer');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Trust proxy for Hostinger
 app.set('trust proxy', 1);
 
 console.log('═══════════════════════════════════════════════════════════════════════════════');
-console.log('🚀 STARTING FORUM SERVER WITH IMAGE UPLOAD...');
+console.log('🚀 FORUM SERVER WITH CO-ADMIN SYSTEM...');
 console.log('═══════════════════════════════════════════════════════════════════════════════');
 
-// ═══════════════════════════════════════════════════════════
 // IMAGE UPLOAD SETUP
-// ═══════════════════════════════════════════════════════════
-
-// Create uploads directory if it doesn't exist
 const uploadsDir = '/home/u277837837/domains/indiadigitalmarketingforum.org/data/uploads';
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log('✅ Uploads directory created');
 }
 
-// Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename
     const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
     cb(null, uniqueName);
   }
@@ -45,16 +39,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: {
-    fileSize: 1 * 1024 * 1024 // 1 MB limit
-  },
+  limits: { fileSize: 1 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    // Allow only images
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed (JPEG, PNG, GIF, WebP)'));
+      cb(new Error('Only image files allowed'));
     }
   }
 });
@@ -62,7 +53,6 @@ const upload = multer({
 console.log('✅ Image upload configured (Max: 1MB)');
 
 // EMAIL SETUP
-console.log('📧 Configuring email service...');
 const transporter = nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE || 'gmail',
   auth: {
@@ -75,7 +65,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.log('⚠️ Email service issue:', error.message);
   } else {
-    console.log('✅ Email service ready - can send emails!');
+    console.log('✅ Email service ready');
   }
 });
 
@@ -110,8 +100,6 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-
-// Serve uploaded images as static files
 app.use('/uploads', express.static(uploadsDir));
 
 // DATABASE
@@ -163,6 +151,24 @@ function initializeDatabase() {
       expires_at DATETIME DEFAULT (datetime('now', '+24 hours'))
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS co_admins (
+      id INTEGER PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      email TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      status TEXT DEFAULT 'active'
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS co_admin_sessions (
+      id INTEGER PRIMARY KEY,
+      token TEXT UNIQUE,
+      co_admin_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME DEFAULT (datetime('now', '+24 hours')),
+      FOREIGN KEY(co_admin_id) REFERENCES co_admins(id)
+    )`);
+
     db.run(`CREATE TABLE IF NOT EXISTS subscribers (
       id INTEGER PRIMARY KEY,
       email TEXT UNIQUE,
@@ -177,9 +183,15 @@ function initializeDatabase() {
 
 initializeDatabase();
 
-// ═══════════════════════════════════════════════════════════
-// STATIC FILES
-// ═══════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+function generateToken() {
+  return Math.random().toString(36).substr(2) + Date.now().toString(36);
+}
+
 app.use(express.static(path.join(__dirname)));
 
 // ═══════════════════════════════════════════════════════════
@@ -207,8 +219,12 @@ app.get('/community/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'community', 'admin.html'));
 });
 
+app.get('/community/co-admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'community', 'co-admin.html'));
+});
+
 // ═══════════════════════════════════════════════════════════
-// IMAGE UPLOAD ENDPOINT
+// IMAGE UPLOAD
 // ═══════════════════════════════════════════════════════════
 
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
@@ -225,7 +241,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// API - POSTS WITH IMAGES
+// API - POSTS
 // ═══════════════════════════════════════════════════════════
 
 app.get('/api/posts', (req, res) => {
@@ -330,7 +346,7 @@ app.get('/api/admin/subscribers', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// API - ADMIN
+// API - MAIN ADMIN (Password-based)
 // ═══════════════════════════════════════════════════════════
 
 app.post('/api/admin/login', (req, res) => {
@@ -339,7 +355,7 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid password' });
   }
 
-  const token = Math.random().toString(36).substr(2) + Date.now().toString(36);
+  const token = generateToken();
   db.run('INSERT INTO admin_sessions (token) VALUES (?)', [token], (err) => {
     if (err) return res.status(500).json({ error: 'Session error' });
     res.json({ token, message: 'Login successful' });
@@ -452,13 +468,209 @@ app.get('/api/admin/stats', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
+// API - CO-ADMIN MANAGEMENT (Admin only)
+// ═══════════════════════════════════════════════════════════
+
+app.post('/api/admin/co-admins', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { username, password, email } = req.body;
+
+    if (!username || !password || password.length < 6) {
+      return res.status(400).json({ error: 'Username and password (min 6 chars) required' });
+    }
+
+    const passwordHash = hashPassword(password);
+
+    db.run(
+      'INSERT INTO co_admins (username, password_hash, email) VALUES (?, ?, ?)',
+      [username, passwordHash, email || null],
+      function(err) {
+        if (err) {
+          if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'Username already exists' });
+          }
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        res.status(201).json({ 
+          id: this.lastID, 
+          message: 'Co-admin created successfully' 
+        });
+      }
+    );
+  });
+});
+
+app.get('/api/admin/co-admins', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.all('SELECT id, username, email, created_at, status FROM co_admins ORDER BY created_at DESC', (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows || []);
+    });
+  });
+});
+
+app.delete('/api/admin/co-admins/:id', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.run('DELETE FROM co_admins WHERE id = ?', [req.params.id], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json({ message: 'Co-admin deleted' });
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// API - CO-ADMIN LOGIN & OPERATIONS
+// ═══════════════════════════════════════════════════════════
+
+app.post('/api/co-admin/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' });
+  }
+
+  const passwordHash = hashPassword(password);
+
+  db.get('SELECT id FROM co_admins WHERE username = ? AND password_hash = ? AND status = ?', 
+    [username, passwordHash, 'active'], 
+    (err, coAdmin) => {
+      if (err || !coAdmin) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const token = generateToken();
+      db.run('INSERT INTO co_admin_sessions (token, co_admin_id) VALUES (?, ?)', 
+        [token, coAdmin.id], 
+        (err) => {
+          if (err) return res.status(500).json({ error: 'Session error' });
+          res.json({ token, message: 'Login successful' });
+        }
+      );
+    }
+  );
+});
+
+// Co-admin: Get pending posts
+app.get('/api/co-admin/posts/pending', (req, res) => {
+  const token = req.headers['x-co-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['pending'], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows || []);
+    });
+  });
+});
+
+// Co-admin: Get approved posts (read-only)
+app.get('/api/co-admin/posts/approved', (req, res) => {
+  const token = req.headers['x-co-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.all('SELECT * FROM posts WHERE status = ? ORDER BY featured DESC, created_at DESC', ['approved'], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows || []);
+    });
+  });
+});
+
+// Co-admin: Approve post
+app.post('/api/co-admin/posts/:id/approve', (req, res) => {
+  const token = req.headers['x-co-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
+      if (err || !post) return res.status(500).json({ error: 'Post not found' });
+
+      db.run('UPDATE posts SET status = ? WHERE id = ?', ['approved', req.params.id], async (err) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+
+        await sendEmail(post.author_email, 'Your Post Approved!', `<h2>Your post has been approved!</h2>`);
+
+        res.json({ message: 'Post approved' });
+      });
+    });
+  });
+});
+
+// Co-admin: Reject post
+app.delete('/api/co-admin/posts/:id', (req, res) => {
+  const token = req.headers['x-co-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
+      if (err || !post) return res.status(500).json({ error: 'Post not found' });
+
+      db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+
+        await sendEmail(post.author_email, 'Post Rejected', `<h2>Your post was rejected</h2>`);
+
+        res.json({ message: 'Post deleted' });
+      });
+    });
+  });
+});
+
+// Co-admin: Get stats (read-only)
+app.get('/api/co-admin/stats', (req, res) => {
+  const token = req.headers['x-co-admin-token'];
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
+    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+
+    db.all('SELECT COUNT(*) as total FROM posts', (err, totalRows) => {
+      db.all('SELECT COUNT(*) as today FROM posts WHERE DATE(created_at) = DATE("now")', (err, todayRows) => {
+        db.all('SELECT COUNT(DISTINCT author_email) as members FROM posts', (err, membersRows) => {
+          res.json({
+            total_posts: totalRows?.[0]?.total || 0,
+            posts_today: todayRows?.[0]?.today || 0,
+            active_members: membersRows?.[0]?.members || 0
+          });
+        });
+      });
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
 // ERROR HANDLING
 // ═══════════════════════════════════════════════════════════
+
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File too large. Max 1MB allowed.' });
+      return res.status(400).json({ error: 'File too large. Max 1MB.' });
     }
   }
   res.status(500).json({ error: 'Internal server error' });
@@ -471,15 +683,15 @@ app.use((req, res) => {
 // ═══════════════════════════════════════════════════════════
 // START SERVER
 // ═══════════════════════════════════════════════════════════
+
 app.listen(PORT, () => {
   console.log('═══════════════════════════════════════════════════════════════════════════════');
-  console.log('🚀 FORUM SERVER WITH IMAGE UPLOAD RUNNING');
+  console.log('🚀 FORUM WITH CO-ADMIN SYSTEM RUNNING');
   console.log('═══════════════════════════════════════════════════════════════════════════════');
   console.log(`✅ Server: http://localhost:${PORT}`);
   console.log(`✅ Main: http://localhost:${PORT}/`);
   console.log(`✅ Community: http://localhost:${PORT}/community/`);
-  console.log(`✅ Image upload: Max 1MB`);
-  console.log(`✅ Email: ${process.env.EMAIL_SERVICE}`);
+  console.log(`✅ Co-Admin System: Active`);
   console.log('═══════════════════════════════════════════════════════════════════════════════');
 });
 
