@@ -365,6 +365,7 @@
             <button class="tab-btn" onclick="switchTab('subscribers')">📧 Subscribers</button>
             <button class="tab-btn" onclick="switchTab('co-admins')">👥 Manage Co-Admins</button>
             <button class="tab-btn" onclick="switchTab('stats')">📊 Statistics</button>
+            <button class="tab-btn" onclick="switchTab('password')">🔐 Change Password</button>
         </div>
 
         <!-- Pending Posts -->
@@ -713,6 +714,21 @@
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
+        // ADD THIS FUNCTION HERE ↓↓↓
+
+function changeAdminPassword() {
+    // ... all the code from the file ...
+}
+
+// THEN THE setInterval COMES AFTER ↓↓↓
+
+setInterval(() => {
+    loadPendingPosts();
+    loadApprovedPosts();
+    loadSubscribers();
+    loadCoAdmins();
+    loadStats();
+}, 30000);
         setInterval(() => {
             loadPendingPosts();
             loadApprovedPosts();
