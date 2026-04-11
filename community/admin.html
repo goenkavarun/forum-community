@@ -472,6 +472,46 @@
                 <div class="stat-card">
                     <div class="stat-number" id="statSubscribers">-</div>
                     <div class="stat-label">Subscribers</div>
+                    <!-- Change Password -->
+        <div id="password" class="tab-content">
+            <div class="form-section">
+                <h3>🔐 Change Admin Password</h3>
+                <p style="margin-bottom: 20px; color: #666; font-size: 0.95em;">
+                    Update your main admin password for the control panel.
+                </p>
+                
+                <div class="form-group">
+                    <label>Current Password:</label>
+                    <input type="password" id="currentPassword" placeholder="Enter current password">
+                </div>
+                
+                <div class="form-group">
+                    <label>New Password:</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password (min 6 chars)">
+                </div>
+                
+                <div class="form-group">
+                    <label>Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                </div>
+                
+                <button class="btn btn-add" onclick="changeAdminPassword()" style="width: 100%; margin-top: 20px;">
+                    ✅ Change Password
+                </button>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #FF6B00;">
+                    <p style="color: #856404; font-size: 0.9em; margin-bottom: 8px;">
+                        <strong>⚠️ Important:</strong>
+                    </p>
+                    <ul style="margin-left: 20px; color: #856404; font-size: 0.9em; line-height: 1.6;">
+                        <li>Password must be at least 6 characters</li>
+                        <li>New password must be different from current</li>
+                        <li>You will need to login again with new password</li>
+                        <li>Store your password safely</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
                 </div>
             </div>
         </div>
