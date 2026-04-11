@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Forum - India Digital Marketing Forum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        header h1 {
+            font-size: 2em;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .admin-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .admin-btn:hover {
+            background: white;
+            color: #0B1B3E;
+        }
+
+        .forum-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #0B1B3E;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #FF6B00;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #0B1B3E;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select,
+        textarea,
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        select:focus,
+        textarea:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 5px rgba(255,107,0,0.3);
+        }
+
+        .image-preview {
+            margin-top: 10px;
+            max-width: 200px;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            border-radius: 5px;
+            border: 2px solid #FF6B00;
+        }
+
+        .file-size-info {
+            font-size: 0.85em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,0,0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .posts-container {
+            margin-top: 30px;
+        }
+
+        .post-card {
+            background: #f9f9f9;
+            border-left: 4px solid #FF6B00;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .post-title {
+            color: #0B1B3E;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .post-category {
+            display: inline-block;
+            background: #FF6B00;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        .post-image {
+            max-width: 100%;
+            margin: 15px 0;
+            border-radius: 5px;
+            max-height: 300px;
+        }
+
+        .post-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9em;
+            background: #0B1B3E;
+        }
+
+        .btn-small:hover {
+            background: #FF6B00;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            input[type="text"],
+            input[type="email"],
+            select,
+            textarea,
+            input[type="file"] {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div>
+                <h1>🌐 Community Forum</h1>
+                <p>Share your insights, ask questions, and connect with fellow digital marketers</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat">
+                    <div class="stat-number" id="totalPosts">-</div>
+                    <div class="stat-label">Total Posts</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="postsToday">-</div>
+                    <div class="stat-label">Today</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="activeMembers">-</div>
+                    <div class="stat-label">Members</div>
+                </div>
+            </div>
+            <button class="admin-btn" onclick="openAdminPanel()">🔐 Admin Panel</button>
+        </header>
+
+        <!-- Message Display -->
+        <div id="message" class="message"></div>
+
+        <!-- Post Submission Form -->
+        <div class="forum-section">
+            <h2 class="section-title">✏️ Share Your Post</h2>
+            
+            <form id="postForm" onsubmit="submitPost(event)">
+                <div class="form-group">
+                    <label for="title">Post Title *</label>
+                    <input type="text" id="title" placeholder="What would you like to discuss?" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="author-name">Your Name *</label>
+                    <input type="text" id="author-name" placeholder="Your full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="author-email">Your Email *</label>
+                    <input type="email" id="author-email" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" required>
+                        <option value="">Select a category</option>
+                        <option value="SEO">SEO</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Content Marketing">Content Marketing</option>
+                        <option value="PPC Advertising">PPC Advertising</option>
+                        <option value="Email Marketing">Email Marketing</option>
+                        <option value="Analytics">Analytics</option>
+                        <option value="Brand Strategy">Brand Strategy</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea id="description" placeholder="Share your question, insight, or experience..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="image">Add Image (Optional)</label>
+                    <input type="file" id="image" accept="image/*" onchange="previewImage(event)">
+                    <p class="file-size-info">Max file size: 1 MB. Supported: JPEG, PNG, GIF, WebP</p>
+                    <div class="image-preview" id="imagePreview"></div>
+                </div>
+
+                <button type="submit">📤 Submit Post</button>
+            </form>
+        </div>
+
+        <!-- Posts Display -->
+        <div class="forum-section">
+            <h2 class="section-title">📚 Community Posts</h2>
+            <div class="posts-container" id="postsContainer">
+                <div class="empty-state">Loading posts...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let selectedImageFile = null;
+
+        // Load posts on page load
+        window.addEventListener('load', () => {
+            loadPosts();
+            loadStats();
+        });
+
+        // Refresh posts every 30 seconds
+        setInterval(loadPosts, 30000);
+
+        // Image preview
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('imagePreview');
+
+            if (file) {
+                // Check file size
+                if (file.size > 1 * 1024 * 1024) {
+                    alert('❌ File too large! Max 1MB allowed.');
+                    event.target.value = '';
+                    preview.innerHTML = '';
+                    selectedImageFile = null;
+                    return;
+                }
+
+                selectedImageFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                selectedImageFile = null;
+                preview.innerHTML = '';
+            }
+        }
+
+        // Submit post with image
+        async function submitPost(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('title').value;
+            const author_name = document.getElementById('author-name').value;
+            const author_email = document.getElementById('author-email').value;
+            const category = document.getElementById('category').value;
+            const description = document.getElementById('description').value;
+
+            let image_url = null;
+
+            // Upload image if selected
+            if (selectedImageFile) {
+                const formData = new FormData();
+                formData.append('image', selectedImageFile);
+
+                try {
+                    const uploadRes = await fetch(`${API_BASE}/upload-image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!uploadRes.ok) {
+                        showMessage('❌ Image upload failed', 'error');
+                        return;
+                    }
+
+                    const uploadData = await uploadRes.json();
+                    image_url = uploadData.imageUrl;
+                } catch (error) {
+                    showMessage('❌ Error uploading image: ' + error.message, 'error');
+                    return;
+                }
+            }
+
+            // Submit post
+            try {
+                const response = await fetch(`${API_BASE}/posts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        author_name,
+                        author_email,
+                        category,
+                        description,
+                        image_url
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ ' + data.message, 'success');
+                    document.getElementById('postForm').reset();
+                    document.getElementById('imagePreview').innerHTML = '';
+                    selectedImageFile = null;
+                    loadPosts();
+                    loadStats();
+                } else {
+                    showMessage('❌ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // Load and display posts
+        function loadPosts() {
+            fetch(`${API_BASE}/posts`)
+                .then(response => response.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+
+                    const container = document.getElementById('postsContainer');
+
+                    if (posts.length === 0) {
+                        container.innerHTML = '<div class="empty-state">No posts yet. Be the first to share!</div>';
+                        return;
+                    }
+
+                    container.innerHTML = posts.map(post => `
+                        <div class="post-card">
+                            <div class="post-title">${escapeHtml(post.title)}</div>
+                            <div class="post-meta">
+                                By <strong>${escapeHtml(post.author_name)}</strong> • 
+                                ${new Date(post.created_at).toLocaleDateString()} • 
+                                <span class="post-category">${escapeHtml(post.category)}</span>
+                            </div>
+                            ${post.image_url ? `<img src="${post.image_url}" alt="Post image" class="post-image">` : ''}
+                            <div class="post-description">${escapeHtml(post.description)}</div>
+                            <div class="post-actions">
+                                <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    document.getElementById('postsContainer').innerHTML = '<div class="empty-state">Error loading posts</div>';
+                });
+        }
+
+        // Load statistics
+        function loadStats() {
+            fetch(`${API_BASE}/posts`)
+                .then(response => response.json())
+                .then(posts => {
+                    if (Array.isArray(posts)) {
+                        document.getElementById('totalPosts').textContent = posts.length;
+
+                        const today = new Date().toDateString();
+                        const postsToday = posts.filter(post => 
+                            new Date(post.created_at).toDateString() === today
+                        ).length;
+                        document.getElementById('postsToday').textContent = postsToday;
+
+                        const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
+                        document.getElementById('activeMembers').textContent = uniqueMembers;
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        // Mark post as helpful
+        function markHelpful(postId) {
+            fetch(`${API_BASE}/posts/${postId}/helpful`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadPosts();
+            })
+            .catch(err => console.error('Error:', err));
+        }
+
+        // Open admin panel
+        function openAdminPanel() {
+            const password = prompt('🔐 Admin Password:');
+            if (!password) return;
+
+            fetch(`${API_BASE}/admin/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    sessionStorage.setItem('adminToken', data.token);
+                    window.location.href = 'admin.html';
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            })
+            .catch(err => alert('❌ Error: ' + err.message));
+        }
+
+        // Utility functions
+        function showMessage(msg, type) {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = msg;
+            msgEl.className = `message ${type}`;
+            setTimeout(() => { msgEl.className = 'message'; }, 4000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
