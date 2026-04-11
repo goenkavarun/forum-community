@@ -229,6 +229,7 @@
             display: flex;
             gap: 10px;
             margin-top: 12px;
+            flex-wrap: wrap;
         }
 
         .btn-small {
@@ -268,93 +269,72 @@
             display: block;
         }
 
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header-stats {
-                width: 100%;
-                justify-content: space-around;
-            }
-
-            input[type="text"],
-            input[type="email"],
-            select,
-            textarea,
-            input[type="file"] {
-                font-size: 16px;
-            }
-        }
-    </style>
-    <style>
-    .floating-whatsapp {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #25D366, #20BA5A);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 5px 20px rgba(37, 211, 102, 0.4);
-        transition: all 0.3s;
-        z-index: 999;
-        text-decoration: none;
-    }
-
-    .floating-whatsapp:hover {
-        transform: scale(1.1);
-        box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
-    }
-
-    .floating-whatsapp svg {
-        width: 32px;
-        height: 32px;
-        fill: white;
-    }
-
-    .floating-whatsapp-label {
-        position: absolute;
-        right: 80px;
-        bottom: 15px;
-        background: white;
-        padding: 10px 15px;
-        border-radius: 5px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        font-size: 0.9em;
-        color: #333;
-        font-weight: bold;
-        white-space: nowrap;
-        display: none;
-    }
-
-    .floating-whatsapp:hover .floating-whatsapp-label {
-        display: block;
-    }
-
-    @media (max-width: 768px) {
+        /* FLOATING WHATSAPP STYLE */
         .floating-whatsapp {
-            bottom: 20px;
-            right: 20px;
-            width: 55px;
-            height: 55px;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #25D366, #20BA5A);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(37, 211, 102, 0.4);
+            transition: all 0.3s;
+            z-index: 999;
+            text-decoration: none;
+        }
+
+        .floating-whatsapp:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
         }
 
         .floating-whatsapp svg {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
+            fill: white;
         }
-    }
-</style>
+
+        .floating-whatsapp-label {
+            position: absolute;
+            right: 80px;
+            bottom: 15px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+            white-space: nowrap;
+            display: none;
+        }
+
+        .floating-whatsapp:hover .floating-whatsapp-label {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .floating-whatsapp {
+                bottom: 20px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+            }
+
+            .floating-whatsapp svg {
+                width: 28px;
+                height: 28px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header>
             <div>
                 <h1>🌐 Community Forum</h1>
@@ -374,14 +354,14 @@
                     <div class="stat-label">Members</div>
                 </div>
             </div>
-            <button class="admin-btn" onclick="openAdminPanel()">🔐 Admin Panel</button>
-            <button class="admin-btn" onclick="window.location.href='co-admin-login.html'" style="background: rgba(255,107,0,0.3); border-color: #FF6B00;">🟠 Co-Admin Login</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="admin-btn" onclick="openAdminPanel()">🔐 Admin Panel</button>
+                <button class="admin-btn" onclick="window.location.href='co-admin-login.html'" style="background: rgba(255,107,0,0.3); border-color: #FF6B00;">🟠 Co-Admin</button>
+            </div>
         </header>
 
-        <!-- Message Display -->
         <div id="message" class="message"></div>
 
-        <!-- Post Submission Form -->
         <div class="forum-section">
             <h2 class="section-title">✏️ Share Your Post</h2>
             
@@ -432,7 +412,6 @@
             </form>
         </div>
 
-        <!-- Posts Display -->
         <div class="forum-section">
             <h2 class="section-title">📚 Community Posts</h2>
             <div class="posts-container" id="postsContainer">
@@ -441,26 +420,30 @@
         </div>
     </div>
 
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/+919831105344" target="_blank" rel="noopener" class="floating-whatsapp" title="Chat with us on WhatsApp">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.99 0-3.863.474-5.491 1.361l-.384.214-3.976-.837.852 3.126.235.374c-.999 1.542-1.529 3.33-1.529 5.226 0 5.861 4.807 10.667 10.667 10.667 1.99 0 3.873-.474 5.491-1.361l.384-.214 3.976.837-.852-3.126-.235-.374c.999-1.542 1.529-3.33 1.529-5.226 0-5.861-4.807-10.667-10.667-10.667" />
+        </svg>
+        <div class="floating-whatsapp-label">💬 Chat with us</div>
+    </a>
+
     <script>
         const API_BASE = '/api';
         let selectedImageFile = null;
 
-        // Load posts on page load
         window.addEventListener('load', () => {
             loadPosts();
             loadStats();
         });
 
-        // Refresh posts every 30 seconds
         setInterval(loadPosts, 30000);
 
-        // Image preview
         function previewImage(event) {
             const file = event.target.files[0];
             const preview = document.getElementById('imagePreview');
 
             if (file) {
-                // Check file size
                 if (file.size > 1 * 1024 * 1024) {
                     alert('❌ File too large! Max 1MB allowed.');
                     event.target.value = '';
@@ -472,7 +455,7 @@
                 selectedImageFile = file;
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -481,7 +464,6 @@
             }
         }
 
-        // Submit post with image
         async function submitPost(event) {
             event.preventDefault();
 
@@ -493,13 +475,12 @@
 
             let image_url = null;
 
-            // Upload image if selected
             if (selectedImageFile) {
                 const formData = new FormData();
                 formData.append('image', selectedImageFile);
 
                 try {
-                    const uploadRes = await fetch(`${API_BASE}/upload-image`, {
+                    const uploadRes = await fetch(API_BASE + '/upload-image', {
                         method: 'POST',
                         body: formData
                     });
@@ -517,18 +498,17 @@
                 }
             }
 
-            // Submit post
             try {
-                const response = await fetch(`${API_BASE}/posts`, {
+                const response = await fetch(API_BASE + '/posts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        title,
-                        author_name,
-                        author_email,
-                        category,
-                        description,
-                        image_url
+                        title: title,
+                        author_name: author_name,
+                        author_email: author_email,
+                        category: category,
+                        description: description,
+                        image_url: image_url
                     })
                 });
 
@@ -549,9 +529,8 @@
             }
         }
 
-        // Load and display posts
         function loadPosts() {
-            fetch(`${API_BASE}/posts`)
+            fetch(API_BASE + '/posts')
                 .then(response => response.json())
                 .then(posts => {
                     if (!Array.isArray(posts)) posts = [];
@@ -563,22 +542,7 @@
                         return;
                     }
 
-                    container.innerHTML = posts.map(post => `
-                        <div class="post-card">
-                            <div class="post-title">${escapeHtml(post.title)}</div>
-                            <div class="post-meta">
-                                By <strong>${escapeHtml(post.author_name)}</strong> • 
-                                ${new Date(post.created_at).toLocaleDateString()} • 
-                                <span class="post-category">${escapeHtml(post.category)}</span>
-                            </div>
-                            ${post.image_url ? `<img src="${post.image_url}" alt="Post image" class="post-image">` : ''}
-                            <div class="post-description">${escapeHtml(post.description)}</div>
-                            <div class="post-actions">
-                                <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
-                                <button class="btn-small" onclick="sharePost(${post.id}, '${escapeHtml(post.title).replace(/'/g, "\\'")}', '${post.author_name}')" style="background: #1877F2;">📤 Share</button>                      
-                            </div>
-                        </div>
-                    `).join('');
+                    container.innerHTML = posts.map(post => '<div class="post-card"><div class="post-title">' + escapeHtml(post.title) + '</div><div class="post-meta">By <strong>' + escapeHtml(post.author_name) + '</strong> • ' + new Date(post.created_at).toLocaleDateString() + ' • <span class="post-category">' + escapeHtml(post.category) + '</span></div>' + (post.image_url ? '<img src="' + post.image_url + '" alt="Post image" class="post-image">' : '') + '<div class="post-description">' + escapeHtml(post.description) + '</div><div class="post-actions"><button class="btn-small" onclick="markHelpful(' + post.id + ')">👍 Helpful (' + post.helpful_count + ')</button><button class="btn-small" onclick="sharePost(' + post.id + ', \'' + escapeHtml(post.title).replace(/'/g, "\\'") + '\', \'' + post.author_name + '\')" style="background: #1877F2;">📤 Share</button></div></div>').join('');
                 })
                 .catch(err => {
                     console.error('Error:', err);
@@ -586,9 +550,8 @@
                 });
         }
 
-        // Load statistics
         function loadStats() {
-            fetch(`${API_BASE}/posts`)
+            fetch(API_BASE + '/posts')
                 .then(response => response.json())
                 .then(posts => {
                     if (Array.isArray(posts)) {
@@ -607,9 +570,8 @@
                 .catch(err => console.error('Error:', err));
         }
 
-        // Mark post as helpful
         function markHelpful(postId) {
-            fetch(`${API_BASE}/posts/${postId}/helpful`, {
+            fetch(API_BASE + '/posts/' + postId + '/helpful', {
                 method: 'POST'
             })
             .then(response => response.json())
@@ -619,15 +581,14 @@
             .catch(err => console.error('Error:', err));
         }
 
-        // Open admin panel
         function openAdminPanel() {
             const password = prompt('🔐 Admin Password:');
             if (!password) return;
 
-            fetch(`${API_BASE}/admin/login`, {
+            fetch(API_BASE + '/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
+                body: JSON.stringify({ password: password })
             })
             .then(response => response.json())
             .then(data => {
@@ -641,11 +602,34 @@
             .catch(err => alert('❌ Error: ' + err.message));
         }
 
-        // Utility functions
+        // SOCIAL SHARE FUNCTION
+        function sharePost(postId, postTitle, authorName) {
+            const postUrl = window.location.origin + '/community/index.html?post=' + postId;
+            const postText = 'Check out this post by ' + authorName + ': "' + postTitle + '" on India Digital Marketing Forum';
+
+            const shareOptions = '<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 10000; max-width: 400px; width: 90%;"><h3 style="margin-bottom: 20px; color: #0B1B3E; text-align: center;">📤 Share This Post</h3><p style="margin-bottom: 20px; text-align: center; color: #666; font-size: 0.9em;"><strong>"' + postTitle + '"</strong></p><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;"><a href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(postUrl) + '" target="_blank" rel="noopener" style="background: #1877F2; color: white; padding: 15px; border-radius: 5px; text-align: center; text-decoration: none; font-weight: bold;">📘 Facebook</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(postUrl) + '" target="_blank" rel="noopener" style="background: #0A66C2; color: white; padding: 15px; border-radius: 5px; text-align: center; text-decoration: none; font-weight: bold;">💼 LinkedIn</a><a href="https://twitter.com/intent/tweet?url=' + encodeURIComponent(postUrl) + '&text=' + encodeURIComponent(postText) + '" target="_blank" rel="noopener" style="background: #000000; color: white; padding: 15px; border-radius: 5px; text-align: center; text-decoration: none; font-weight: bold;">𝕏 Twitter</a><a href="https://wa.me/?text=' + encodeURIComponent(postText + ' ' + postUrl) + '" target="_blank" rel="noopener" style="background: #25D366; color: white; padding: 15px; border-radius: 5px; text-align: center; text-decoration: none; font-weight: bold;">💚 WhatsApp</a><a href="https://www.instagram.com/" target="_blank" rel="noopener" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: white; padding: 15px; border-radius: 5px; text-align: center; text-decoration: none; font-weight: bold; grid-column: 1 / -1;">📷 Instagram (Copy & Share)</a></div><div style="margin-bottom: 15px;"><label style="display: block; margin-bottom: 8px; color: #0B1B3E; font-weight: bold;">Copy Link:</label><div style="display: flex; gap: 10px;"><input type="text" value="' + postUrl + '" id="shareLink" readonly style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 0.85em;"><button onclick="copyShareLink()" style="background: #FF6B00; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">📋 Copy</button></div></div><button onclick="closeShareMenu()" style="width: 100%; padding: 12px; background: #f5f5f5; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333;">✕ Close</button></div><div id="shareOverlay" onclick="closeShareMenu()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;"></div>';
+
+            document.body.insertAdjacentHTML('beforeend', shareOptions);
+        }
+
+        function copyShareLink() {
+            const link = document.getElementById('shareLink');
+            link.select();
+            document.execCommand('copy');
+            alert('✅ Link copied to clipboard!');
+        }
+
+        function closeShareMenu() {
+            const overlay = document.getElementById('shareOverlay');
+            const menu = overlay?.previousElementSibling;
+            if (overlay) overlay.remove();
+            if (menu) menu.remove();
+        }
+
         function showMessage(msg, type) {
             const msgEl = document.getElementById('message');
             msgEl.textContent = msg;
-            msgEl.className = `message ${type}`;
+            msgEl.className = 'message ' + type;
             setTimeout(() => { msgEl.className = 'message'; }, 4000);
         }
 
@@ -659,17 +643,6 @@
             };
             return text.replace(/[&<>"']/g, m => map[m]);
         }
-
-        <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
-<button class="btn-small" onclick="sharePost(${post.id}, '${escapeHtml(post.title).replace(/'/g, "\\'")}', '${post.author_name}')" style="background: #1877F2;">📤 Share</button>
     </script>
-
-    <!-- Floating WhatsApp Button -->
-<a href="https://wa.me/+919831105344" target="_blank" rel="noopener" class="floating-whatsapp" title="Chat with us on WhatsApp">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.99 0-3.863.474-5.491 1.361l-.384.214-3.976-.837.852 3.126.235.374c-.999 1.542-1.529 3.33-1.529 5.226 0 5.861 4.807 10.667 10.667 10.667 1.99 0 3.873-.474 5.491-1.361l.384-.214 3.976.837-.852-3.126-.235-.374c.999-1.542 1.529-3.33 1.529-5.226 0-5.861-4.807-10.667-10.667-10.667" />
-    </svg>
-    <div class="floating-whatsapp-label">💬 Chat with us</div>
-</a>
 </body>
 </html>
