@@ -659,6 +659,9 @@
             };
             return text.replace(/[&<>"']/g, m => map[m]);
         }
+
+        <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
+<button class="btn-small" onclick="sharePost(${post.id}, '${escapeHtml(post.title).replace(/'/g, "\\'")}', '${post.author_name}')" style="background: #1877F2;">📤 Share</button>
     </script>
 
     <!-- Floating WhatsApp Button -->
