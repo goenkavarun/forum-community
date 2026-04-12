@@ -653,38 +653,40 @@ app.get('/api/admin/subscribers', (req, res) => {
     );
 });
 
-// Get statistics
+// Get statistics (admin) - WORKING VERSION
 app.get('/api/admin/stats', (req, res) => {
-    try {
-        db.get('SELECT COUNT(*) as totalPosts FROM posts', (err1, posts) => {
-            db.get('SELECT COUNT(*) as totalComments FROM comments', (err2, comments) => {
-                db.get('SELECT COUNT(*) as totalUsers FROM users', (err3, users) => {
-                    db.get('SELECT COUNT(*) as totalSubscribers FROM subscribers', (err4, subs) => {
-                        res.json({
-                            totalPosts: posts?.totalPosts || 0,
-                            totalComments: comments?.totalComments || 0,
-                            totalUsers: users?.totalUsers || 0,
-                            totalSubscribers: subs?.totalSubscribers || 0,
-                            postsToday: 0,
-                            activeMembers: 0
-                        });
-                    });
+    console.log('📊 Admin stats requested');
+    
+    let stats = {
+        totalPosts: 0,
+        totalComments: 0,
+        totalUsers: 0,
+        totalSubscribers: 0
+    };
+
+    // Count posts
+    db.get('SELECT COUNT(*) as cnt FROM posts', (err, row) => {
+        if (!err && row) stats.totalPosts = row.cnt;
+        
+        // Count comments
+        db.get('SELECT COUNT(*) as cnt FROM comments', (err, row) => {
+            if (!err && row) stats.totalComments = row.cnt;
+            
+            // Count users
+            db.get('SELECT COUNT(*) as cnt FROM users', (err, row) => {
+                if (!err && row) stats.totalUsers = row.cnt;
+                
+                // Count subscribers
+                db.get('SELECT COUNT(*) as cnt FROM subscribers', (err, row) => {
+                    if (!err && row) stats.totalSubscribers = row.cnt;
+                    
+                    console.log('✅ Stats:', stats);
+                    res.json(stats);
                 });
             });
         });
-    } catch (err) {
-        console.error('Stats error:', err);
-        res.json({
-            totalPosts: 0,
-            totalComments: 0,
-            totalUsers: 0,
-            totalSubscribers: 0,
-            postsToday: 0,
-            activeMembers: 0
-        });
-    }
+    });
 });
-
 // Get pending users
 app.get('/api/admin/users/pending', (req, res) => {
     db.all(
