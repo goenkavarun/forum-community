@@ -720,25 +720,54 @@
             .catch(err => showMessage('Error', 'error'));
         }
 
-        function loadStats() {
-            fetch(`${API_BASE}/admin/stats`, {
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(stats => {
-                document.getElementById('statTotal').textContent = stats.total_posts || 0;
-                document.getElementById('statToday').textContent = stats.posts_today || 0;
-                document.getElementById('statMembers').textContent = stats.active_members || 0;
-            })
-            .catch(err => {});
+       function loadStats() {
+    console.log('📊 Loading admin stats...');
+    
+    // Get all posts
+    fetch(API_BASE + '/posts')
+        .then(response => response.json())
+        .then(posts => {
+            if (!Array.isArray(posts)) posts = [];
+            
+            const totalPosts = posts.length;
+            
+            const today = new Date().toDateString();
+            const postsToday = posts.filter(post => 
+                new Date(post.created_at).toDateString() === today
+            ).length;
+            
+            const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
+            
+            // Update HTML
+            const totalEl = document.getElementById('statTotal');
+            const todayEl = document.getElementById('statToday');
+            const membersEl = document.getElementById('statMembers');
+            
+            if (totalEl) totalEl.textContent = totalPosts;
+            if (todayEl) todayEl.textContent = postsToday;
+            if (membersEl) membersEl.textContent = uniqueMembers;
+            
+            console.log('✅ Stats loaded:', { totalPosts, postsToday, uniqueMembers });
+        })
+        .catch(err => {
+            console.error('❌ Stats error:', err);
+        });
+    
+    // Get subscribers count
+    fetch(API_BASE + '/subscribers/count')
+        .then(response => response.json())
+        .then(data => {
+            const subEl = document.getElementById('statSubscribers');
+            if (subEl) subEl.textContent = data.count || 0;
+        })
+        .catch(err => console.error('Subscribers error:', err));
+}
 
-            fetch(`${API_BASE}/subscribers/count`)
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('statSubscribers').textContent = data.count || 0;
-            })
-            .catch(err => {});
-        }
+// Load stats on page load
+window.addEventListener('load', loadStats);
+
+// Refresh stats every 30 seconds
+setInterval(loadStats, 30000);
 
         function logout() {
             sessionStorage.removeItem('adminToken');
