@@ -328,7 +328,7 @@
             fetch(API_BASE + '/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password, name: username })
+                body: JSON.stringify({ username, email, password, name:username })
             })
             .then(r => r.json())
             .then(data => {
