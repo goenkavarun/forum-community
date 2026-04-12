@@ -228,7 +228,7 @@ function hashPassword(password) {
 
 // Sign up with email
 app.post('/api/auth/signup', (req, res) => {
-    const { username, email, password, name } = req.body;
+    const { username, email, password, name=username } = req.body;
 
     if (!username || !email || !password) {
         return res.status(400).json({ error: 'Missing required fields' });
