@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="canonical" href="https://indiadigitalmarketingforum.org/community/admin.html">
-<meta name="robots" content="noindex, nofollow">
     <title>Admin Panel - India Digital Marketing Forum</title>
+    <link rel="canonical" href="https://indiadigitalmarketingforum.org/community/admin.html">
+    <meta name="robots" content="noindex, nofollow">
     <style>
         * {
             margin: 0;
@@ -85,34 +85,6 @@
             display: block;
         }
 
-        .search-box {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .search-box input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1em;
-        }
-
-        .search-box button {
-            padding: 12px 20px;
-            background: #FF6B00;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .search-box button:hover {
-            background: #E55A00;
-        }
-
         .posts-grid {
             display: grid;
             gap: 15px;
@@ -150,7 +122,6 @@
             max-height: 300px;
             margin: 15px 0;
             border-radius: 5px;
-            border: 1px solid #ddd;
         }
 
         .post-category {
@@ -197,77 +168,6 @@
             background: #da190b;
         }
 
-        .btn-add {
-            background: #2196F3;
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .btn-add:hover {
-            background: #0b7dda;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #0B1B3E;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1em;
-        }
-
-        .form-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .co-admin-table {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f9f9f9;
-            padding: 15px;
-            text-align: left;
-            font-weight: bold;
-            color: #0B1B3E;
-            border-bottom: 2px solid #eee;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        tr:hover {
-            background: #f5f5f5;
-        }
-
         .stat-card {
             background: white;
             padding: 20px;
@@ -277,7 +177,7 @@
         }
 
         .stat-number {
-            font-size: 2em;
+            font-size: 2.5em;
             color: #FF6B00;
             font-weight: bold;
         }
@@ -285,6 +185,7 @@
         .stat-label {
             color: #666;
             margin-top: 10px;
+            font-size: 0.95em;
         }
 
         .stats-grid {
@@ -323,14 +224,35 @@
             display: block;
         }
 
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #0B1B3E;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 5px rgba(255,107,0,0.3);
+        }
+
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
                 gap: 15px;
-            }
-
-            .tabs {
-                flex-wrap: wrap;
             }
 
             .post-actions {
@@ -339,15 +261,6 @@
 
             .btn {
                 width: 100%;
-            }
-
-            th, td {
-                padding: 10px;
-                font-size: 0.9em;
-            }
-
-            .form-group input {
-                font-size: 16px;
             }
         }
     </style>
@@ -364,10 +277,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('pending')">⏳ Pending Posts</button>
             <button class="tab-btn" onclick="switchTab('approved')">✅ Approved Posts</button>
-            <button class="tab-btn" onclick="switchTab('subscribers')">📧 Subscribers</button>
-            <button class="tab-btn" onclick="switchTab('co-admins')">👥 Manage Co-Admins</button>
             <button class="tab-btn" onclick="switchTab('stats')">📊 Statistics</button>
-            <button class="tab-btn" onclick="switchTab('password')">🔐 Change Password</button>
         </div>
 
         <!-- Pending Posts -->
@@ -384,137 +294,24 @@
             </div>
         </div>
 
-        <!-- Subscribers -->
-        <div id="subscribers" class="tab-content">
-            <div class="form-section">
-                <h3>📧 Newsletter Subscribers</h3>
-                <p style="margin: 20px 0; text-align: center; font-weight: bold; color: #FF6B00;">
-                    Total: <span id="subscriberCount">0</span>
-                </p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Email</th>
-                                <th>Name</th>
-                                <th>Subscribed</th>
-                            </tr>
-                        </thead>
-                        <tbody id="subscribersBody">
-                            <tr>
-                                <td colspan="4" style="text-align: center;">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Co-Admins Management -->
-        <div id="co-admins" class="tab-content">
-            <div class="form-section">
-                <h3>➕ Create Co-Admin</h3>
-                <div class="form-group">
-                    <label>Username:</label>
-                    <input type="text" id="coAdminUsername" placeholder="Username">
-                </div>
-                <div class="form-group">
-                    <label>Password (min 6 chars):</label>
-                    <input type="password" id="coAdminPassword" placeholder="Password">
-                </div>
-                <div class="form-group">
-                    <label>Email (optional):</label>
-                    <input type="email" id="coAdminEmail" placeholder="Email">
-                </div>
-                <button class="btn btn-add" onclick="createCoAdmin()">✅ Create Co-Admin</button>
-            </div>
-
-            <div class="form-section">
-                <h3>👥 Active Co-Admins</h3>
-                <p style="margin: 20px 0; text-align: center; font-weight: bold; color: #FF6B00;">
-                    Total: <span id="coAdminCount">0</span>/15
-                </p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Created</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="coAdminsBody">
-                            <tr>
-                                <td colspan="5" style="text-align: center;">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
         <!-- Statistics -->
         <div id="stats" class="tab-content">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number" id="statTotal">-</div>
+                    <div class="stat-number" id="statTotal">0</div>
                     <div class="stat-label">Total Posts</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="statToday">-</div>
+                    <div class="stat-number" id="statToday">0</div>
                     <div class="stat-label">Posts Today</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="statMembers">-</div>
+                    <div class="stat-number" id="statMembers">0</div>
                     <div class="stat-label">Active Members</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="statSubscribers">-</div>
+                    <div class="stat-number" id="statSubscribers">0</div>
                     <div class="stat-label">Subscribers</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Change Password -->
-        <div id="password" class="tab-content">
-            <div class="form-section">
-                <h3>🔐 Change Admin Password</h3>
-                <p style="margin-bottom: 20px; color: #666; font-size: 0.95em;">
-                    Update your main admin password for the control panel.
-                </p>
-                
-                <div class="form-group">
-                    <label>Current Password:</label>
-                    <input type="password" id="currentPassword" placeholder="Enter current password">
-                </div>
-                
-                <div class="form-group">
-                    <label>New Password:</label>
-                    <input type="password" id="newPassword" placeholder="Enter new password (min 6 chars)">
-                </div>
-                
-                <div class="form-group">
-                    <label>Confirm New Password:</label>
-                    <input type="password" id="confirmPassword" placeholder="Confirm new password">
-                </div>
-                
-                <button class="btn btn-add" onclick="changeAdminPassword()" style="width: 100%; margin-top: 20px;">
-                    ✅ Change Password
-                </button>
-                
-                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #FF6B00;">
-                    <p style="color: #856404; font-size: 0.9em; margin-bottom: 8px;">
-                        <strong>⚠️ Important:</strong>
-                    </p>
-                    <ul style="margin-left: 20px; color: #856404; font-size: 0.9em; line-height: 1.6;">
-                        <li>Password must be at least 6 characters</li>
-                        <li>New password must be different from current</li>
-                        <li>You will need to login again with new password</li>
-                        <li>Store your password safely</li>
-                    </ul>
                 </div>
             </div>
         </div>
@@ -526,16 +323,22 @@
 
         if (!adminToken) {
             alert('⚠️ Unauthorized');
-            window.location.href = 'index.html';
+            window.location.href = '/community/';
         }
 
-        window.onload = () => {
+        window.addEventListener('load', () => {
+            console.log('📊 Admin page loaded');
             loadPendingPosts();
             loadApprovedPosts();
-            loadSubscribers();
-            loadCoAdmins();
             loadStats();
-        };
+        });
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            loadPendingPosts();
+            loadApprovedPosts();
+            loadStats();
+        }, 30000);
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -545,233 +348,163 @@
         }
 
         function loadPendingPosts() {
-            fetch(`${API_BASE}/admin/posts/pending`, {
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(posts => {
-                if (!Array.isArray(posts)) posts = [];
-                if (posts.length === 0) {
-                    document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">✅ No pending posts</div>';
-                    return;
-                }
-                document.getElementById('pendingPosts').innerHTML = posts.map(post => `
-                    <div class="post-card">
-                        <div class="post-title">${escapeHtml(post.title)}</div>
-                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
-                        <span class="post-category">${escapeHtml(post.category)}</span>
-                        <div class="post-description">${escapeHtml(post.description)}</div>
-                        ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
-                        <div class="post-actions">
-                            <button class="btn btn-approve" onclick="approvePost(${post.id})">✅ Approve</button>
-                            <button class="btn btn-delete" onclick="deletePost(${post.id})">🗑️ Reject</button>
+            console.log('📥 Loading pending posts...');
+            fetch(`${API_BASE}/admin/posts/pending`)
+                .then(r => r.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+                    console.log('✅ Pending posts:', posts.length);
+                    
+                    if (posts.length === 0) {
+                        document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">✅ No pending posts</div>';
+                        return;
+                    }
+
+                    document.getElementById('pendingPosts').innerHTML = posts.map(post => `
+                        <div class="post-card">
+                            <div class="post-title">${escapeHtml(post.title)}</div>
+                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                            <span class="post-category">${escapeHtml(post.category)}</span>
+                            <div class="post-description">${escapeHtml(post.description)}</div>
+                            ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
+                            <div class="post-actions">
+                                <button class="btn btn-approve" onclick="approvePost(${post.id})">✅ Approve</button>
+                                <button class="btn btn-delete" onclick="rejectPost(${post.id})">🗑️ Reject</button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-            })
-            .catch(err => showMessage('Error loading posts', 'error'));
+                    `).join('');
+                })
+                .catch(err => {
+                    console.error('❌ Error loading pending posts:', err);
+                    document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">Error loading posts</div>';
+                });
         }
 
         function loadApprovedPosts() {
-            fetch(`${API_BASE}/admin/posts/approved`, {
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(posts => {
-                if (!Array.isArray(posts)) posts = [];
-                if (posts.length === 0) {
-                    document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
-                    return;
-                }
-                document.getElementById('approvedPosts').innerHTML = posts.map(post => `
-                    <div class="post-card">
-                        <div class="post-title">${escapeHtml(post.title)}</div>
-                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
-                        <span class="post-category">${escapeHtml(post.category)}</span>
-                        <div class="post-description">${escapeHtml(post.description)}</div>
-                        ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
-                        <div class="post-actions">
-                            <button class="btn btn-delete" onclick="deleteApprovedPost(${post.id})">🗑️ Delete</button>
+            console.log('✅ Loading approved posts...');
+            fetch(`${API_BASE}/admin/posts/approved`)
+                .then(r => r.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+                    console.log('✅ Approved posts:', posts.length);
+                    
+                    if (posts.length === 0) {
+                        document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
+                        return;
+                    }
+
+                    document.getElementById('approvedPosts').innerHTML = posts.map(post => `
+                        <div class="post-card">
+                            <div class="post-title">${escapeHtml(post.title)}</div>
+                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                            <span class="post-category">${escapeHtml(post.category)}</span>
+                            <div class="post-description">${escapeHtml(post.description)}</div>
+                            ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
+                            <div class="post-actions">
+                                <button class="btn btn-delete" onclick="deletePost(${post.id})">🗑️ Delete</button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-            })
-            .catch(err => showMessage('Error loading posts', 'error'));
-        }
-
-        function loadSubscribers() {
-            fetch(`${API_BASE}/admin/subscribers`, {
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(subs => {
-                if (!Array.isArray(subs)) subs = [];
-                document.getElementById('subscriberCount').textContent = subs.length;
-                document.getElementById('subscribersBody').innerHTML = subs.length === 0 
-                    ? '<tr><td colspan="4" style="text-align: center;">No subscribers</td></tr>'
-                    : subs.map((s, i) => `<tr><td>${i+1}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.name)}</td><td>${new Date(s.subscribed_at).toLocaleDateString()}</td></tr>`).join('');
-            })
-            .catch(err => showMessage('Error loading subscribers', 'error'));
-        }
-
-        function loadCoAdmins() {
-            fetch(`${API_BASE}/admin/co-admins`, {
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(admins => {
-                if (!Array.isArray(admins)) admins = [];
-                document.getElementById('coAdminCount').textContent = admins.length;
-                document.getElementById('coAdminsBody').innerHTML = admins.length === 0
-                    ? '<tr><td colspan="5" style="text-align: center;">No co-admins yet</td></tr>'
-                    : admins.map((a, i) => `<tr><td>${i+1}</td><td><strong>${escapeHtml(a.username)}</strong></td><td>${escapeHtml(a.email || '-')}</td><td>${new Date(a.created_at).toLocaleDateString()}</td><td><button class="btn btn-delete" onclick="deleteCoAdmin(${a.id})">Delete</button></td></tr>`).join('');
-            })
-            .catch(err => showMessage('Error loading co-admins', 'error'));
-        }
-
-        function createCoAdmin() {
-            const username = document.getElementById('coAdminUsername').value;
-            const password = document.getElementById('coAdminPassword').value;
-            const email = document.getElementById('coAdminEmail').value;
-
-            if (!username || !password || password.length < 6) {
-                showMessage('Username and password (min 6 chars) required', 'error');
-                return;
-            }
-
-            fetch(`${API_BASE}/admin/co-admins`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Token': adminToken
-                },
-                body: JSON.stringify({ username, password, email: email || null })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    showMessage('❌ ' + data.error, 'error');
-                } else {
-                    showMessage('✅ Co-admin created', 'success');
-                    document.getElementById('coAdminUsername').value = '';
-                    document.getElementById('coAdminPassword').value = '';
-                    document.getElementById('coAdminEmail').value = '';
-                    loadCoAdmins();
-                }
-            })
-            .catch(err => showMessage('Error creating co-admin', 'error'));
-        }
-
-        function deleteCoAdmin(id) {
-            if (!confirm('Delete this co-admin?')) return;
-
-            fetch(`${API_BASE}/admin/co-admins/${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                showMessage('✅ Co-admin deleted', 'success');
-                loadCoAdmins();
-            })
-            .catch(err => showMessage('Error deleting co-admin', 'error'));
+                    `).join('');
+                })
+                .catch(err => {
+                    console.error('❌ Error loading approved posts:', err);
+                    document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">Error loading posts</div>';
+                });
         }
 
         function approvePost(id) {
             if (!confirm('Approve this post?')) return;
-            fetch(`${API_BASE}/admin/posts/${id}/approve`, {
-                method: 'POST',
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                showMessage('✅ Post approved', 'success');
-                loadPendingPosts();
-                loadApprovedPosts();
-            })
-            .catch(err => showMessage('Error', 'error'));
+            
+            fetch(`${API_BASE}/admin/posts/${id}/approve`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    showMessage('✅ Post approved', 'success');
+                    loadPendingPosts();
+                    loadApprovedPosts();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showMessage('❌ Error approving post', 'error');
+                });
+        }
+
+        function rejectPost(id) {
+            if (!confirm('Reject this post?')) return;
+            
+            fetch(`${API_BASE}/admin/posts/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    showMessage('✅ Post rejected', 'success');
+                    loadPendingPosts();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showMessage('❌ Error rejecting post', 'error');
+                });
         }
 
         function deletePost(id) {
-            if (!confirm('Reject this post?')) return;
-            fetch(`${API_BASE}/admin/posts/${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                showMessage('✅ Post rejected', 'success');
-                loadPendingPosts();
-            })
-            .catch(err => showMessage('Error', 'error'));
-        }
-
-        function deleteApprovedPost(id) {
             if (!confirm('Delete this post?')) return;
-            fetch(`${API_BASE}/admin/posts/approved/${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Admin-Token': adminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                showMessage('✅ Post deleted', 'success');
-                loadApprovedPosts();
-            })
-            .catch(err => showMessage('Error', 'error'));
+            
+            fetch(`${API_BASE}/admin/posts/approved/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    showMessage('✅ Post deleted', 'success');
+                    loadApprovedPosts();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showMessage('❌ Error deleting post', 'error');
+                });
         }
 
-       function loadStats() {
-    console.log('📊 Loading admin stats...');
-    
-    // Get all posts
-    fetch(API_BASE + '/posts')
-        .then(response => response.json())
-        .then(posts => {
-            if (!Array.isArray(posts)) posts = [];
+        function loadStats() {
+            console.log('📊 Loading stats...');
             
-            const totalPosts = posts.length;
-            
-            const today = new Date().toDateString();
-            const postsToday = posts.filter(post => 
-                new Date(post.created_at).toDateString() === today
-            ).length;
-            
-            const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
-            
-            // Update HTML
-            const totalEl = document.getElementById('statTotal');
-            const todayEl = document.getElementById('statToday');
-            const membersEl = document.getElementById('statMembers');
-            
-            if (totalEl) totalEl.textContent = totalPosts;
-            if (todayEl) todayEl.textContent = postsToday;
-            if (membersEl) membersEl.textContent = uniqueMembers;
-            
-            console.log('✅ Stats loaded:', { totalPosts, postsToday, uniqueMembers });
-        })
-        .catch(err => {
-            console.error('❌ Stats error:', err);
-        });
-    
-    // Get subscribers count
-    fetch(API_BASE + '/subscribers/count')
-        .then(response => response.json())
-        .then(data => {
-            const subEl = document.getElementById('statSubscribers');
-            if (subEl) subEl.textContent = data.count || 0;
-        })
-        .catch(err => console.error('Subscribers error:', err));
-}
+            // Fetch all posts and calculate stats
+            fetch(`${API_BASE}/posts`)
+                .then(r => r.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+                    console.log('✅ Posts fetched:', posts.length);
+                    
+                    const totalPosts = posts.length;
+                    
+                    const today = new Date().toDateString();
+                    const postsToday = posts.filter(post => 
+                        new Date(post.created_at).toDateString() === today
+                    ).length;
+                    
+                    const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
+                    
+                    document.getElementById('statTotal').textContent = totalPosts;
+                    document.getElementById('statToday').textContent = postsToday;
+                    document.getElementById('statMembers').textContent = uniqueMembers;
+                    
+                    console.log('✅ Stats updated:', { totalPosts, postsToday, uniqueMembers });
+                })
+                .catch(err => {
+                    console.error('❌ Stats error:', err);
+                    document.getElementById('statTotal').textContent = '0';
+                    document.getElementById('statToday').textContent = '0';
+                    document.getElementById('statMembers').textContent = '0';
+                });
 
-// Load stats on page load
-window.addEventListener('load', loadStats);
-
-// Refresh stats every 30 seconds
-setInterval(loadStats, 30000);
+            // Fetch subscribers count
+            fetch(`${API_BASE}/subscribers/count`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('statSubscribers').textContent = data.count || 0;
+                })
+                .catch(err => {
+                    console.error('Subscribers error:', err);
+                    document.getElementById('statSubscribers').textContent = '0';
+                });
+        }
 
         function logout() {
             sessionStorage.removeItem('adminToken');
-            window.location.href = 'index.html';
+            window.location.href = '/community/';
         }
 
         function showMessage(msg, type) {
@@ -785,29 +518,6 @@ setInterval(loadStats, 30000);
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, m => map[m]);
         }
-
-        // ADD THIS FUNCTION HERE ↓↓↓
-
-function changeAdminPassword() {
-    // ... all the code from the file ...
-}
-
-// THEN THE setInterval COMES AFTER ↓↓↓
-
-setInterval(() => {
-    loadPendingPosts();
-    loadApprovedPosts();
-    loadSubscribers();
-    loadCoAdmins();
-    loadStats();
-}, 30000);
-        setInterval(() => {
-            loadPendingPosts();
-            loadApprovedPosts();
-            loadSubscribers();
-            loadCoAdmins();
-            loadStats();
-        }, 30000);
     </script>
 </body>
 </html>
