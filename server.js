@@ -251,7 +251,9 @@ app.post('/api/auth/signup', (req, res) => {
 
             res.json({
                 message: 'Signup successful! Check your email to verify.',
+                token: generateToken(),
                 userId: this.lastID,
+                username: username, 
                 verificationToken: verificationToken
             });
         }
