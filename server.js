@@ -15,6 +15,25 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 app.set('trust proxy', 1);
+
+// ═══════════════════════════════════════════════════════════
+// CREATE DATA DIRECTORY FIRST (before using it!)
+// ═══════════════════════════════════════════════════════════
+
+const dataDir = '/home/u277837837/domains/indiadigitalmarketingforum.org/data';
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const uploadsDir = path.join(dataDir, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CORS & MIDDLEWARE
+// ═══════════════════════════════════════════════════════════
+
 app.use(cors({
     origin: [
         'indiadigitalmarketingforum.org',
@@ -26,37 +45,40 @@ app.use(cors({
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+
+// ═══════════════════════════════════════════════════════════
+// STATIC FILES (now dataDir is defined!)
+// ═══════════════════════════════════════════════════════════
+
 app.use(express.static(path.join(__dirname)));
 app.use('/uploads', express.static(path.join(dataDir, 'uploads')));
 
-// Rate limiting
+// ═══════════════════════════════════════════════════════════
+// RATE LIMITING
+// ═══════════════════════════════════════════════════════════
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000,  // Increased from 100
+    max: 1000,
     message: 'Too many requests, please try again later',
-    skip: (req) => req.path.startsWith('/api/')  // Skip rate limit for API
+    skip: (req) => req.path.startsWith('/api/')
 });
 app.use(limiter);
 
-// Create data directory if it doesn't exist
-const dataDir = '/home/u277837837/domains/indiadigitalmarketingforum.org/data';
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-}
+// ═══════════════════════════════════════════════════════════
+// DATABASE SETUP
+// ═══════════════════════════════════════════════════════════
 
-const uploadsDir = path.join(dataDir, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Database setup
 const dbPath = path.join(dataDir, 'forum.db');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) console.error('Database error:', err);
     else console.log('✅ Database connected');
 });
 
-// Image upload setup
+// ═══════════════════════════════════════════════════════════
+// IMAGE UPLOAD SETUP
+// ═══════════════════════════════════════════════════════════
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadsDir);
@@ -99,7 +121,7 @@ function initializeDatabase() {
             )
         `);
 
-        // Posts table (updated)
+        // Posts table
         db.run(`
             CREATE TABLE IF NOT EXISTS posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,7 +141,7 @@ function initializeDatabase() {
             )
         `);
 
-        // Comments table (NEW)
+        // Comments table
         db.run(`
             CREATE TABLE IF NOT EXISTS comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -224,7 +246,6 @@ app.post('/api/auth/signup', (req, res) => {
                 return res.status(500).json({ error: 'Signup failed' });
             }
 
-            // TODO: Send verification email
             res.json({
                 message: 'Signup successful! Check your email to verify.',
                 userId: this.lastID,
@@ -296,7 +317,7 @@ app.post('/api/auth/login', (req, res) => {
     );
 });
 
-// Google OAuth callback (simplified)
+// Google OAuth callback
 app.post('/api/auth/google', (req, res) => {
     const { googleId, email, name } = req.body;
 
@@ -309,7 +330,6 @@ app.post('/api/auth/google', (req, res) => {
             }
 
             if (user) {
-                // Existing user
                 const token = generateToken();
                 return res.json({
                     token: token,
@@ -320,7 +340,6 @@ app.post('/api/auth/google', (req, res) => {
                 });
             }
 
-            // New Google user - auto-verify and approve
             db.run(
                 `INSERT INTO users (username, email, google_id, is_verified, is_approved)
                  VALUES (?, ?, ?, 1, 1)`,
@@ -348,7 +367,7 @@ app.post('/api/auth/google', (req, res) => {
 // POSTS ENDPOINTS
 // ═══════════════════════════════════════════════════════════
 
-// Get all approved posts with featured first
+// Get all approved posts
 app.get('/api/posts', (req, res) => {
     db.all(
         `SELECT * FROM posts 
@@ -448,7 +467,7 @@ app.get('/api/posts/:postId/comments', (req, res) => {
     );
 });
 
-// Submit comment (requires login)
+// Submit comment
 app.post('/api/posts/:postId/comments', (req, res) => {
     const { userId, authorName, authorEmail, content } = req.body;
     const postId = req.params.postId;
@@ -692,6 +711,19 @@ app.delete('/api/admin/users/:id', (req, res) => {
     );
 });
 
+// Get co-admins
+app.get('/api/admin/co-admins', (req, res) => {
+    db.all(
+        `SELECT id, username, email, created_at, status FROM co_admins ORDER BY created_at DESC`,
+        (err, coAdmins) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch co-admins' });
+            }
+            res.json(coAdmins || []);
+        }
+    );
+});
+
 // ═══════════════════════════════════════════════════════════
 // SEARCH ENDPOINT
 // ═══════════════════════════════════════════════════════════
@@ -759,7 +791,7 @@ app.get('/api/subscribers/count', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// CO-ADMIN ENDPOINTS (Same as Admin but limited)
+// CO-ADMIN ENDPOINTS
 // ═══════════════════════════════════════════════════════════
 
 app.post('/api/co-admin/login', (req, res) => {
@@ -784,7 +816,6 @@ app.post('/api/co-admin/login', (req, res) => {
     );
 });
 
-// Co-admin pending comments (same approval endpoints)
 app.get('/api/co-admin/comments/pending', (req, res) => {
     db.all(
         `SELECT c.*, p.title as post_title FROM comments c
@@ -800,7 +831,6 @@ app.get('/api/co-admin/comments/pending', (req, res) => {
     );
 });
 
-// Co-admin stats (analytics)
 app.get('/api/co-admin/stats', (req, res) => {
     db.get(
         `SELECT 
@@ -824,4 +854,6 @@ app.get('/api/co-admin/stats', (req, res) => {
 app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`✅ All 6 EPIC features ready!`);
+    console.log(`✅ Database initialized`);
+    console.log(`✅ Uploads folder: ${uploadsDir}`);
 });
