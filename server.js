@@ -15,7 +15,11 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 app.set('trust proxy', 1);
-
+// Fix Content Security Policy
+app.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;");
+    next();
+});
 // ═══════════════════════════════════════════════════════════
 // CREATE DATA DIRECTORY FIRST (before using it!)
 // ═══════════════════════════════════════════════════════════
@@ -398,26 +402,33 @@ app.get('/api/posts/:id', (req, res) => {
 
 // Submit new post
 app.post('/api/posts', (req, res) => {
-    const { title, author_name, author_email, category, tags, description, image_url, user_id } = req.body;
+    try {
+        const { title, author_name, author_email, category, tags, description, image_url, user_id } = req.body;
 
-    if (!title || !author_name || !author_email || !category || !description) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    db.run(
-        `INSERT INTO posts (title, author_name, author_email, user_id, category, tags, description, image_url, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-        [title, author_name, author_email, user_id || null, category, tags || null, description, image_url || null],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ error: 'Failed to submit post' });
-            }
-            res.json({
-                message: 'Post submitted successfully!',
-                postId: this.lastID
-            });
+        if (!title || !author_name || !author_email || !category || !description) {
+            return res.status(400).json({ error: 'Missing required fields' });
         }
-    );
+
+        db.run(
+            `INSERT INTO posts (title, author_name, author_email, user_id, category, tags, description, image_url, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+            [title, author_name, author_email, user_id || null, category, tags || null, description, image_url || null],
+            function(err) {
+                if (err) {
+                    console.error('Post insert error:', err);
+                    return res.status(500).json({ error: 'Failed to submit post: ' + err.message });
+                }
+                console.log('✅ Post created:', this.lastID);
+                res.json({
+                    message: 'Post submitted successfully!',
+                    postId: this.lastID
+                });
+            }
+        );
+    } catch (error) {
+        console.error('Post endpoint error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
 });
 
 // Mark post as helpful
