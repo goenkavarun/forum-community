@@ -13,7 +13,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 app.set('trust proxy', 1);
 
 
