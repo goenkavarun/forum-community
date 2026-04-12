@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /community/admin.html
+Disallow: /community/co-admin.html
+Disallow: /community/co-admin-login.html
+
+Sitemap: https://indiadigitalmarketingforum.org/sitemap.xml
