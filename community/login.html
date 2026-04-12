@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - India Digital Marketing Forum</title>
+    <style>
+        body { font-family: Segoe UI; background: linear-gradient(135deg, #0B1B3E, #FF6B00); }
+        .container { max-width: 400px; margin: 100px auto; }
+        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h2 { color: #0B1B3E; margin-bottom: 30px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #0B1B3E; font-weight: bold; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #FF6B00; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .tab-switch { text-align: center; margin-top: 20px; }
+        .tab-switch a { cursor: pointer; color: #FF6B00; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <!-- LOGIN TAB -->
+            <div id="loginForm" style="display: block;">
+                <h2>🔐 Login</h2>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="loginPassword" placeholder="Your password">
+                </div>
+                <button onclick="handleLogin()">Login</button>
+                
+                <div style="margin: 20px 0; text-align: center;">
+                    <button onclick="handleGoogleLogin()" style="background: #4285F4;">
+                        🔐 Login with Google
+                    </button>
+                </div>
+                
+                <div class="tab-switch">
+                    No account? <a onclick="switchTab('signup')">Sign up here</a>
+                </div>
+            </div>
+
+            <!-- SIGNUP TAB -->
+            <div id="signupForm" style="display: none;">
+                <h2>📝 Sign Up</h2>
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="signupUsername" placeholder="Choose username">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="signupEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="signupPassword" placeholder="Min 6 characters">
+                </div>
+                <button onclick="handleSignup()">Create Account</button>
+                
+                <div class="tab-switch">
+                    Already have account? <a onclick="switchTab('login')">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('username', data.username);
+                window.location.href = '/community/';
+            } else {
+                alert('❌ ' + data.error);
+            }
+        }
+
+        async function handleSignup() {
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+
+            const response = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('✅ Signup successful! Check your email to verify.');
+                switchTab('login');
+            } else {
+                alert('❌ ' + data.error);
+            }
+        }
+
+        function handleGoogleLogin() {
+            // Implement Google OAuth flow
+            alert('🔐 Google login coming soon!');
+        }
+    </script>
+</body>
+</html>
