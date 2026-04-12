@@ -437,6 +437,9 @@
     <script>
         const API_BASE = '/api';
         let selectedImageFile = null;
+        let userToken = localStorage.getItem('userToken');
+        let userId = localStorage.getItem('userId');
+        let username = localStorage.getItem('username');
 
         window.addEventListener('load', () => {
     updateUserAuthUI();
