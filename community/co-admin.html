@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="canonical" href="https://indiadigitalmarketingforum.org/community/co-admin.html">
-<meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="noindex, nofollow">
     <title>Co-Admin Dashboard - India Digital Marketing Forum</title>
     <style>
         * {
@@ -178,7 +178,7 @@
         }
 
         .stat-number {
-            font-size: 2em;
+            font-size: 2.5em;
             color: #FF6B00;
             font-weight: bold;
         }
@@ -186,12 +186,14 @@
         .stat-label {
             color: #666;
             margin-top: 10px;
+            font-size: 0.95em;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
+            margin-bottom: 30px;
         }
 
         .empty-state {
@@ -221,11 +223,6 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
             display: block;
-        }
-
-        .restricted-tab {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .badge {
@@ -288,15 +285,15 @@
         <div id="stats" class="tab-content">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number" id="statTotal">-</div>
+                    <div class="stat-number" id="statTotal">0</div>
                     <div class="stat-label">Total Posts</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="statToday">-</div>
+                    <div class="stat-number" id="statToday">0</div>
                     <div class="stat-label">Posts Today</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="statMembers">-</div>
+                    <div class="stat-number" id="statMembers">0</div>
                     <div class="stat-label">Active Members</div>
                 </div>
             </div>
@@ -309,14 +306,22 @@
 
         if (!coAdminToken) {
             alert('⚠️ Unauthorized');
-            window.location.href = 'index.html';
+            window.location.href = '/community/';
         }
 
-        window.onload = () => {
+        window.addEventListener('load', () => {
+            console.log('📊 Co-Admin page loaded');
             loadPendingPosts();
             loadApprovedPosts();
             loadStats();
-        };
+        });
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            loadPendingPosts();
+            loadApprovedPosts();
+            loadStats();
+        }, 30000);
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -326,102 +331,134 @@
         }
 
         function loadPendingPosts() {
-            fetch(`${API_BASE}/co-admin/posts/pending`, {
-                headers: { 'X-Co-Admin-Token': coAdminToken }
-            })
-            .then(r => r.json())
-            .then(posts => {
-                if (!Array.isArray(posts)) posts = [];
-                if (posts.length === 0) {
-                    document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">✅ No pending posts</div>';
-                    return;
-                }
-                document.getElementById('pendingPosts').innerHTML = posts.map(post => `
-                    <div class="post-card">
-                        <div class="post-title">${escapeHtml(post.title)}</div>
-                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
-                        <span class="post-category">${escapeHtml(post.category)}</span>
-                        <div class="post-description">${escapeHtml(post.description)}</div>
-                        ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
-                        <div class="post-actions">
-                            <button class="btn btn-approve" onclick="approvePost(${post.id})">✅ Approve</button>
-                            <button class="btn btn-delete" onclick="rejectPost(${post.id})">🗑️ Reject</button>
+            console.log('📥 Loading pending posts...');
+            fetch(`${API_BASE}/co-admin/posts/pending`)
+                .then(r => r.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+                    console.log('✅ Pending posts:', posts.length);
+                    
+                    if (posts.length === 0) {
+                        document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">✅ No pending posts</div>';
+                        return;
+                    }
+
+                    document.getElementById('pendingPosts').innerHTML = posts.map(post => `
+                        <div class="post-card">
+                            <div class="post-title">${escapeHtml(post.title)}</div>
+                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                            <span class="post-category">${escapeHtml(post.category)}</span>
+                            <div class="post-description">${escapeHtml(post.description)}</div>
+                            ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
+                            <div class="post-actions">
+                                <button class="btn btn-approve" onclick="approvePost(${post.id})">✅ Approve</button>
+                                <button class="btn btn-delete" onclick="rejectPost(${post.id})">🗑️ Reject</button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-            })
-            .catch(err => showMessage('Error loading posts', 'error'));
+                    `).join('');
+                })
+                .catch(err => {
+                    console.error('❌ Error loading pending posts:', err);
+                    document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">Error loading posts</div>';
+                });
         }
 
         function loadApprovedPosts() {
-            fetch(`${API_BASE}/co-admin/posts/approved`, {
-                headers: { 'X-Co-Admin-Token': coAdminToken }
-            })
-            .then(r => r.json())
-            .then(posts => {
-                if (!Array.isArray(posts)) posts = [];
-                if (posts.length === 0) {
-                    document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
-                    return;
-                }
-                document.getElementById('approvedPosts').innerHTML = posts.map(post => `
-                    <div class="post-card">
-                        <div class="post-title">${escapeHtml(post.title)}</div>
-                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
-                        <span class="post-category">${escapeHtml(post.category)}</span>
-                        <div class="post-description">${escapeHtml(post.description)}</div>
-                        ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
-                    </div>
-                `).join('');
-            })
-            .catch(err => showMessage('Error loading posts', 'error'));
+            console.log('✅ Loading approved posts...');
+            fetch(`${API_BASE}/co-admin/posts/approved`)
+                .then(r => r.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+                    console.log('✅ Approved posts:', posts.length);
+                    
+                    if (posts.length === 0) {
+                        document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
+                        return;
+                    }
+
+                    document.getElementById('approvedPosts').innerHTML = posts.map(post => `
+                        <div class="post-card">
+                            <div class="post-title">${escapeHtml(post.title)}</div>
+                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                            <span class="post-category">${escapeHtml(post.category)}</span>
+                            <div class="post-description">${escapeHtml(post.description)}</div>
+                            ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
+                        </div>
+                    `).join('');
+                })
+                .catch(err => {
+                    console.error('❌ Error loading approved posts:', err);
+                    document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">Error loading posts</div>';
+                });
         }
 
         function approvePost(id) {
             if (!confirm('Approve this post?')) return;
-            fetch(`${API_BASE}/co-admin/posts/${id}/approve`, {
-                method: 'POST',
-                headers: { 'X-Co-Admin-Token': coAdminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                showMessage('✅ Post approved', 'success');
-                loadPendingPosts();
-                loadApprovedPosts();
-            })
-            .catch(err => showMessage('Error', 'error'));
+            
+            fetch(`${API_BASE}/co-admin/posts/${id}/approve`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    showMessage('✅ Post approved', 'success');
+                    loadPendingPosts();
+                    loadApprovedPosts();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showMessage('❌ Error approving post', 'error');
+                });
         }
 
         function rejectPost(id) {
             if (!confirm('Reject this post?')) return;
-            fetch(`${API_BASE}/co-admin/posts/${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Co-Admin-Token': coAdminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                showMessage('✅ Post rejected', 'success');
-                loadPendingPosts();
-            })
-            .catch(err => showMessage('Error', 'error'));
+            
+            fetch(`${API_BASE}/co-admin/posts/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    showMessage('✅ Post rejected', 'success');
+                    loadPendingPosts();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showMessage('❌ Error rejecting post', 'error');
+                });
         }
 
         function loadStats() {
-            fetch(`${API_BASE}/co-admin/stats`, {
-                headers: { 'X-Co-Admin-Token': coAdminToken }
-            })
-            .then(r => r.json())
-            .then(stats => {
-                document.getElementById('statTotal').textContent = stats.total_posts || 0;
-                document.getElementById('statToday').textContent = stats.posts_today || 0;
-                document.getElementById('statMembers').textContent = stats.active_members || 0;
-            })
-            .catch(err => {});
+            console.log('📊 Loading stats...');
+            
+            // Fetch all posts and calculate stats
+            fetch(`${API_BASE}/posts`)
+                .then(r => r.json())
+                .then(posts => {
+                    if (!Array.isArray(posts)) posts = [];
+                    console.log('✅ Posts fetched:', posts.length);
+                    
+                    const totalPosts = posts.length;
+                    
+                    const today = new Date().toDateString();
+                    const postsToday = posts.filter(post => 
+                        new Date(post.created_at).toDateString() === today
+                    ).length;
+                    
+                    const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
+                    
+                    document.getElementById('statTotal').textContent = totalPosts;
+                    document.getElementById('statToday').textContent = postsToday;
+                    document.getElementById('statMembers').textContent = uniqueMembers;
+                    
+                    console.log('✅ Stats updated:', { totalPosts, postsToday, uniqueMembers });
+                })
+                .catch(err => {
+                    console.error('❌ Stats error:', err);
+                    document.getElementById('statTotal').textContent = '0';
+                    document.getElementById('statToday').textContent = '0';
+                    document.getElementById('statMembers').textContent = '0';
+                });
         }
 
         function logout() {
             sessionStorage.removeItem('coAdminToken');
-            window.location.href = 'index.html';
+            window.location.href = '/community/';
         }
 
         function showMessage(msg, type) {
@@ -435,12 +472,6 @@
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, m => map[m]);
         }
-
-        setInterval(() => {
-            loadPendingPosts();
-            loadApprovedPosts();
-            loadStats();
-        }, 30000);
     </script>
 </body>
 </html>
