@@ -654,14 +654,15 @@ app.get('/api/admin/stats', (req, res) => {
     db.get(
         `SELECT 
             (SELECT COUNT(*) FROM posts WHERE status = 'approved') as totalPosts,
-            (SELECT COUNT(*) FROM posts WHERE DATE(created_at) = DATE('now')) as postsToday,
-            (SELECT COUNT(DISTINCT user_id) FROM posts) as activeMembers,
+            (SELECT COUNT(*) FROM posts WHERE date(created_at) = date('now')) as postsToday,
+            (SELECT COUNT(DISTINCT author_email) FROM posts) as activeMembers,
             (SELECT COUNT(*) FROM subscribers) as subscribers,
             (SELECT COUNT(*) FROM comments WHERE status = 'pending') as pendingComments,
             (SELECT COUNT(*) FROM users WHERE is_approved = 1) as approvedUsers`,
         (err, stats) => {
             if (err) {
-                return res.status(500).json({ error: 'Failed to fetch stats' });
+                console.error('Stats error:', err);
+                return res.status(500).json({ error: 'Failed to fetch stats: ' + err.message });
             }
             res.json(stats || {});
         }
@@ -840,7 +841,8 @@ app.get('/api/co-admin/stats', (req, res) => {
             (SELECT COUNT(*) FROM users WHERE is_approved = 1) as approvedUsers`,
         (err, stats) => {
             if (err) {
-                return res.status(500).json({ error: 'Failed to fetch stats' });
+                console.error('Stats error:', err);
+                return res.status(500).json({ error: 'Failed to fetch stats: ' + err.message });
             }
             res.json(stats || {});
         }
