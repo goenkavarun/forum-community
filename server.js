@@ -850,7 +850,89 @@ app.get('/api/co-admin/stats', (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // START SERVER
 // ═══════════════════════════════════════════════════════════
+// Add these BEFORE the app.listen() at the very end
 
+// Get pending posts (co-admin)
+app.get('/api/co-admin/posts/pending', (req, res) => {
+    db.all(
+        `SELECT * FROM posts WHERE status = 'pending' ORDER BY created_at DESC`,
+        (err, posts) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch pending posts' });
+            }
+            res.json(posts || []);
+        }
+    );
+});
+
+// Get approved posts (co-admin)
+app.get('/api/co-admin/posts/approved', (req, res) => {
+    db.all(
+        `SELECT * FROM posts WHERE status = 'approved' ORDER BY created_at DESC`,
+        (err, posts) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch approved posts' });
+            }
+            res.json(posts || []);
+        }
+    );
+});
+
+// Approve comment (co-admin)
+app.post('/api/co-admin/comments/:id/approve', (req, res) => {
+    db.run(
+        `UPDATE comments SET status = 'approved' WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to approve' });
+            }
+            res.json({ message: 'Comment approved!' });
+        }
+    );
+});
+
+// Delete comment (co-admin)
+app.delete('/api/co-admin/comments/:id', (req, res) => {
+    db.run(
+        `DELETE FROM comments WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete' });
+            }
+            res.json({ message: 'Comment deleted!' });
+        }
+    );
+});
+
+// Approve post (co-admin)
+app.post('/api/co-admin/posts/:id/approve', (req, res) => {
+    db.run(
+        `UPDATE posts SET status = 'approved' WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to approve' });
+            }
+            res.json({ message: 'Post approved!' });
+        }
+    );
+});
+
+// Delete post (co-admin)
+app.delete('/api/co-admin/posts/:id', (req, res) => {
+    db.run(
+        `DELETE FROM posts WHERE id = ? AND status = 'pending'`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete' });
+            }
+            res.json({ message: 'Post deleted!' });
+        }
+    );
+});
 app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`✅ All 6 EPIC features ready!`);
