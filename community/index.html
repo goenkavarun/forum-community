@@ -445,9 +445,11 @@
                 </div>
             </div>
             <div class="header-buttons">
-                <button class="login-btn" id="userAuthBtn" onclick="handleUserAuth()">🔐 Login</button>
-                <button class="logout-btn" id="logoutBtn" onclick="handleLogout()" style="display: none;">🚪 Logout</button>
-            </div>
+    <button class="login-btn" id="userAuthBtn" onclick="handleUserAuth()">🔐 Login</button>
+    <button class="logout-btn" id="logoutBtn" onclick="handleLogout()" style="display: none;">🚪 Logout</button>
+    <button class="admin-btn" onclick="window.location.href='/community/admin.html'">👨‍💼 Admin</button>
+    <button class="admin-btn" onclick="window.location.href='/community/co-admin-login.html'" style="background: rgba(255,107,0,0.3); border-color: #FF6B00;">🟠 Co-Admin</button>
+</div>
         </header>
 
         <div id="message" class="message"></div>
