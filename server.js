@@ -653,18 +653,32 @@ app.get('/api/admin/subscribers', (req, res) => {
 app.get('/api/admin/stats', (req, res) => {
     db.get(
         `SELECT 
-            (SELECT COUNT(*) FROM posts WHERE status = 'approved') as totalPosts,
+            (SELECT COUNT(*) FROM posts) as totalPosts,
             (SELECT COUNT(*) FROM posts WHERE date(created_at) = date('now')) as postsToday,
             (SELECT COUNT(DISTINCT author_email) FROM posts) as activeMembers,
             (SELECT COUNT(*) FROM subscribers) as subscribers,
-            (SELECT COUNT(*) FROM comments WHERE status = 'pending') as pendingComments,
-            (SELECT COUNT(*) FROM users WHERE is_approved = 1) as approvedUsers`,
+            (SELECT COUNT(*) FROM comments) as totalComments,
+            (SELECT COUNT(*) FROM users) as totalUsers`,
         (err, stats) => {
             if (err) {
                 console.error('Stats error:', err);
-                return res.status(500).json({ error: 'Failed to fetch stats: ' + err.message });
+                return res.status(500).json({ 
+                    totalPosts: 0,
+                    postsToday: 0,
+                    activeMembers: 0,
+                    subscribers: 0,
+                    totalComments: 0,
+                    totalUsers: 0
+                });
             }
-            res.json(stats || {});
+            res.json(stats || {
+                totalPosts: 0,
+                postsToday: 0,
+                activeMembers: 0,
+                subscribers: 0,
+                totalComments: 0,
+                totalUsers: 0
+            });
         }
     );
 });
@@ -835,19 +849,28 @@ app.get('/api/co-admin/comments/pending', (req, res) => {
 app.get('/api/co-admin/stats', (req, res) => {
     db.get(
         `SELECT 
-            (SELECT COUNT(*) FROM posts WHERE status = 'approved') as totalPosts,
-            (SELECT COUNT(*) FROM comments WHERE status = 'approved') as approvedComments,
-            (SELECT COUNT(*) FROM comments WHERE status = 'pending') as pendingComments,
-            (SELECT COUNT(*) FROM users WHERE is_approved = 1) as approvedUsers`,
+            (SELECT COUNT(*) FROM posts) as totalPosts,
+            (SELECT COUNT(*) FROM comments) as totalComments,
+            (SELECT COUNT(*) FROM users) as totalUsers`,
         (err, stats) => {
             if (err) {
                 console.error('Stats error:', err);
-                return res.status(500).json({ error: 'Failed to fetch stats: ' + err.message });
+                return res.status(500).json({ 
+                    totalPosts: 0,
+                    totalComments: 0,
+                    totalUsers: 0
+                });
             }
-            res.json(stats || {});
+            res.json(stats || {
+                totalPosts: 0,
+                totalComments: 0,
+                totalUsers: 0
+            });
         }
     );
 });
+
+
 
 // ═══════════════════════════════════════════════════════════
 // START SERVER
