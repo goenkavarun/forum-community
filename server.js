@@ -653,40 +653,21 @@ app.get('/api/admin/subscribers', (req, res) => {
     );
 });
 
-// Get statistics (admin) - WORKING VERSION
+
+// ═══════════════════════════════════════════════════════════
+// STATS ENDPOINTS - SIMPLE & RELIABLE
+// ═══════════════════════════════════════════════════════════
+
+// Get statistics (admin) - SIMPLE VERSION
 app.get('/api/admin/stats', (req, res) => {
     console.log('📊 Admin stats requested');
     
-    let stats = {
-        totalPosts: 0,
-        totalComments: 0,
-        totalUsers: 0,
-        totalSubscribers: 0
-    };
-
-    // Count posts
-    db.get('SELECT COUNT(*) as cnt FROM posts', (err, row) => {
-        if (!err && row) stats.totalPosts = row.cnt;
-        
-        // Count comments
-        db.get('SELECT COUNT(*) as cnt FROM comments', (err, row) => {
-            if (!err && row) stats.totalComments = row.cnt;
-            
-            // Count users
-            db.get('SELECT COUNT(*) as cnt FROM users', (err, row) => {
-                if (!err && row) stats.totalUsers = row.cnt;
-                
-                // Count subscribers
-                db.get('SELECT COUNT(*) as cnt FROM subscribers', (err, row) => {
-                    if (!err && row) stats.totalSubscribers = row.cnt;
-                    
-                    console.log('✅ Stats:', stats);
-                    res.json(stats);
-                });
-            });
-        });
+    res.json({
+        message: 'Use /api/posts endpoint instead for real-time data'
     });
 });
+
+
 // Get pending users
 app.get('/api/admin/users/pending', (req, res) => {
     db.all(
@@ -850,33 +831,14 @@ app.get('/api/co-admin/comments/pending', (req, res) => {
     );
 });
 
+// Get statistics (co-admin) - SIMPLE VERSION
 app.get('/api/co-admin/stats', (req, res) => {
-    try {
-        db.get('SELECT COUNT(*) as totalPosts FROM posts', (err1, posts) => {
-            db.get('SELECT COUNT(*) as totalComments FROM comments', (err2, comments) => {
-                db.get('SELECT COUNT(*) as totalUsers FROM users', (err3, users) => {
-                    res.json({
-                        totalPosts: posts?.totalPosts || 0,
-                        totalComments: comments?.totalComments || 0,
-                        totalUsers: users?.totalUsers || 0,
-                        pendingComments: 0,
-                        approvedComments: 0
-                    });
-                });
-            });
-        });
-    } catch (err) {
-        console.error('Stats error:', err);
-        res.json({
-            totalPosts: 0,
-            totalComments: 0,
-            totalUsers: 0,
-            pendingComments: 0,
-            approvedComments: 0
-        });
-    }
+    console.log('📊 Co-admin stats requested');
+    
+    res.json({
+        message: 'Use /api/posts endpoint instead for real-time data'
+    });
 });
-
 
 
 // ═══════════════════════════════════════════════════════════
