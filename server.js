@@ -1,683 +1,817 @@
 const express = require('express');
-const path = require('path');
+const sqlite3 = require('sqlite3');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
-const sqlite3 = require('sqlite3').verbose();
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const nodemailer = require('nodemailer');
+const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.set('trust proxy', 1);
+// Security middleware
+app.use(helmet());
+app.use(cors({
+    origin: [
+        'indiadigitalmarketingforum.org',
+        'www.indiadigitalmarketingforum.org',
+        'localhost',
+        'localhost:3000'
+    ]
+}));
 
-console.log('═══════════════════════════════════════════════════════════════════════════════');
-console.log('🚀 FORUM SERVER WITH CO-ADMIN SYSTEM...');
-console.log('═══════════════════════════════════════════════════════════════════════════════');
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.static(path.join(__dirname, 'nodejs')));
 
-// IMAGE UPLOAD SETUP
-const uploadsDir = '/home/u277837837/domains/indiadigitalmarketingforum.org/data/uploads';
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('✅ Uploads directory created');
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Too many requests, please try again later'
+});
+app.use(limiter);
+
+// Create data directory if it doesn't exist
+const dataDir = '/home/u277837837/domains/indiadigitalmarketingforum.org/data';
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
 }
 
+const uploadsDir = path.join(dataDir, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Database setup
+const dbPath = path.join(dataDir, 'forum.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) console.error('Database error:', err);
+    else console.log('✅ Database connected');
+});
+
+// Image upload setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
 });
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 1 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files allowed'));
+    storage: storage,
+    limits: { fileSize: 1 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only images allowed'));
+        }
     }
-  }
 });
 
-console.log('✅ Image upload configured (Max: 1MB)');
-
-// EMAIL SETUP
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.log('⚠️ Email service issue:', error.message);
-  } else {
-    console.log('✅ Email service ready');
-  }
-});
-
-async function sendEmail(to, subject, html) {
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: to,
-      subject: subject,
-      html: html
-    });
-    console.log('✅ Email sent to:', to);
-    return true;
-  } catch (error) {
-    console.error('❌ Email error:', error.message);
-    return false;
-  }
-}
-
-// MIDDLEWARE
-app.use(helmet());
-app.use(cors({
-  origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(','),
-  credentials: true
-}));
-
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500
-});
-
-app.use(limiter);
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-app.use('/uploads', express.static(uploadsDir));
-
-// DATABASE
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'forum.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) console.error('DB error:', err);
-  else console.log('✅ Database connected');
-});
+// ═══════════════════════════════════════════════════════════
+// DATABASE INITIALIZATION WITH NEW SCHEMA
+// ═══════════════════════════════════════════════════════════
 
 function initializeDatabase() {
-  db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY,
-      username TEXT UNIQUE,
-      email TEXT UNIQUE,
-      password_hash TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+    db.serialize(() => {
+        // Users table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT,
+                google_id TEXT,
+                is_verified INTEGER DEFAULT 0,
+                is_approved INTEGER DEFAULT 0,
+                verification_token TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS posts (
-      id INTEGER PRIMARY KEY,
-      title TEXT NOT NULL,
-      author_name TEXT NOT NULL,
-      author_email TEXT NOT NULL,
-      category TEXT NOT NULL,
-      description TEXT NOT NULL,
-      image_url TEXT,
-      status TEXT DEFAULT 'pending',
-      helpful_count INTEGER DEFAULT 0,
-      featured INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(title, author_email)
-    )`);
+        // Posts table (updated)
+        db.run(`
+            CREATE TABLE IF NOT EXISTS posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                author_name TEXT NOT NULL,
+                author_email TEXT NOT NULL,
+                user_id INTEGER,
+                category TEXT NOT NULL,
+                tags TEXT,
+                description TEXT NOT NULL,
+                image_url TEXT,
+                status TEXT DEFAULT 'pending',
+                helpful_count INTEGER DEFAULT 0,
+                featured INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS comments (
-      id INTEGER PRIMARY KEY,
-      post_id INTEGER NOT NULL,
-      author_name TEXT NOT NULL,
-      author_email TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
-    )`);
+        // Comments table (NEW)
+        db.run(`
+            CREATE TABLE IF NOT EXISTS comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                author_name TEXT NOT NULL,
+                author_email TEXT NOT NULL,
+                content TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(post_id) REFERENCES posts(id),
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS admin_sessions (
-      id INTEGER PRIMARY KEY,
-      token TEXT UNIQUE,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      expires_at DATETIME DEFAULT (datetime('now', '+24 hours'))
-    )`);
+        // Admin sessions table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS admin_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS co_admins (
-      id INTEGER PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      email TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      status TEXT DEFAULT 'active'
-    )`);
+        // Co-admin sessions table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS co_admin_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token TEXT NOT NULL,
+                co_admin_id INTEGER NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS co_admin_sessions (
-      id INTEGER PRIMARY KEY,
-      token TEXT UNIQUE,
-      co_admin_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      expires_at DATETIME DEFAULT (datetime('now', '+24 hours')),
-      FOREIGN KEY(co_admin_id) REFERENCES co_admins(id)
-    )`);
+        // Co-admins table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS co_admins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                email TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'active'
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS subscribers (
-      id INTEGER PRIMARY KEY,
-      email TEXT UNIQUE,
-      name TEXT,
-      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      status TEXT DEFAULT 'active'
-    )`);
+        // Subscribers table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS subscribers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                name TEXT,
+                subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'active'
+            )
+        `);
 
-    console.log('✅ Database tables ready');
-  });
+        console.log('✅ Database tables initialized');
+    });
 }
 
 initializeDatabase();
 
+// ═══════════════════════════════════════════════════════════
 // UTILITY FUNCTIONS
-function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
+// ═══════════════════════════════════════════════════════════
 
 function generateToken() {
-  return Math.random().toString(36).substr(2) + Date.now().toString(36);
+    return Math.random().toString(36).substr(2) + Date.now().toString(36);
 }
 
-app.use(express.static(path.join(__dirname)));
+function hashPassword(password) {
+    return require('crypto').createHash('sha256').update(password).digest('hex');
+}
 
 // ═══════════════════════════════════════════════════════════
-// HTML ROUTES
+// USER REGISTRATION & LOGIN ENDPOINTS
 // ═══════════════════════════════════════════════════════════
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Sign up with email
+app.post('/api/auth/signup', (req, res) => {
+    const { username, email, password, name } = req.body;
 
-app.get('/community', (req, res) => {
-  res.redirect('/community/');
-});
-
-app.get('/community/', (req, res) => {
-  try {
-    const filePath = path.join(__dirname, 'community', 'index.html');
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(404).send('Community page not found');
-  }
-});
-
-app.get('/community/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'community', 'admin.html'));
-});
-
-app.get('/community/co-admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'community', 'co-admin.html'));
-});
-
-// ═══════════════════════════════════════════════════════════
-// IMAGE UPLOAD
-// ═══════════════════════════════════════════════════════════
-
-app.post('/api/upload-image', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No image provided' });
-  }
-
-  const imageUrl = `/uploads/${req.file.filename}`;
-  res.json({ 
-    success: true, 
-    imageUrl: imageUrl,
-    message: 'Image uploaded successfully'
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
-// API - POSTS
-// ═══════════════════════════════════════════════════════════
-
-app.get('/api/posts', (req, res) => {
-  db.all('SELECT * FROM posts WHERE status = ? ORDER BY featured DESC, created_at DESC', ['approved'], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    res.json(rows || []);
-  });
-});
-
-app.get('/api/posts/:id', (req, res) => {
-  db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!row) return res.status(404).json({ error: 'Post not found' });
-    res.json(row);
-  });
-});
-
-app.post('/api/posts', (req, res) => {
-  const { title, author_name, author_email, category, description, image_url } = req.body;
-  
-  if (!title || !author_name || !author_email || !category || !description) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  db.run(
-    'INSERT INTO posts (title, author_name, author_email, category, description, image_url, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [title, author_name, author_email, category, description, image_url || null, 'pending'],
-    async function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
-          return res.status(400).json({ error: 'You have already posted this.' });
-        }
-        return res.status(500).json({ error: 'Database error' });
-      }
-
-      await sendEmail(author_email, 'Post Submitted', `<h2>Thank you!</h2><p>Your post has been submitted for review.</p>`);
-      await sendEmail(process.env.EMAIL_USER, `New Post: ${title}`, `<h2>New post from ${author_name}</h2><p>${description}</p>${image_url ? `<p><img src="${image_url}" style="max-width:300px;"></p>` : ''}`);
-
-      res.status(201).json({ id: this.lastID, message: 'Post submitted! Awaiting approval.' });
+    if (!username || !email || !password) {
+        return res.status(400).json({ error: 'Missing required fields' });
     }
-  );
-});
 
-app.post('/api/posts/:id/helpful', (req, res) => {
-  db.run('UPDATE posts SET helpful_count = helpful_count + 1 WHERE id = ?', [req.params.id], (err) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    res.json({ message: 'Updated' });
-  });
-});
+    const passwordHash = hashPassword(password);
+    const verificationToken = generateToken();
 
-// ═══════════════════════════════════════════════════════════
-// API - NEWSLETTER
-// ═══════════════════════════════════════════════════════════
+    db.run(
+        `INSERT INTO users (username, email, password_hash, verification_token, is_verified, is_approved)
+         VALUES (?, ?, ?, ?, 0, 0)`,
+        [username, email, passwordHash, verificationToken],
+        function(err) {
+            if (err) {
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    return res.status(400).json({ error: 'Email or username already exists' });
+                }
+                return res.status(500).json({ error: 'Signup failed' });
+            }
 
-app.post('/api/subscribe', (req, res) => {
-  const { email, name } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
-
-  db.run(
-    'INSERT INTO subscribers (email, name) VALUES (?, ?)',
-    [email, name || 'Subscriber'],
-    async function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
-          return res.status(400).json({ error: 'Already subscribed!' });
+            // TODO: Send verification email
+            res.json({
+                message: 'Signup successful! Check your email to verify.',
+                userId: this.lastID,
+                verificationToken: verificationToken
+            });
         }
-        return res.status(500).json({ error: 'Database error' });
-      }
-
-      await sendEmail(email, 'Welcome!', `<h2>Welcome to India Digital Marketing Forum!</h2><p>Thank you for subscribing!</p>`);
-
-      res.status(201).json({ message: 'Successfully subscribed! Check your email.' });
-    }
-  );
+    );
 });
 
-app.get('/api/subscribers/count', (req, res) => {
-  db.all('SELECT COUNT(*) as count FROM subscribers WHERE status = ?', ['active'], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    res.json({ count: rows?.[0]?.count || 0 });
-  });
+// Verify email
+app.post('/api/auth/verify-email', (req, res) => {
+    const { token } = req.body;
+
+    db.run(
+        `UPDATE users SET is_verified = 1, is_approved = 1 WHERE verification_token = ?`,
+        [token],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Verification failed' });
+            }
+
+            if (this.changes === 0) {
+                return res.status(400).json({ error: 'Invalid or expired token' });
+            }
+
+            res.json({ message: 'Email verified successfully! You can now login.' });
+        }
+    );
 });
 
-app.get('/api/admin/subscribers', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'No token' });
-  }
+// Login with email
+app.post('/api/auth/login', (req, res) => {
+    const { email, password } = req.body;
 
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.all('SELECT email, name, subscribed_at FROM subscribers WHERE status = ? ORDER BY subscribed_at DESC', ['active'], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows || []);
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
-// API - MAIN ADMIN (Password-based)
-// ═══════════════════════════════════════════════════════════
-
-app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body;
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid password' });
-  }
-
-  const token = generateToken();
-  db.run('INSERT INTO admin_sessions (token) VALUES (?)', [token], (err) => {
-    if (err) return res.status(500).json({ error: 'Session error' });
-    res.json({ token, message: 'Login successful' });
-  });
-});
-
-app.get('/api/admin/posts/pending', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['pending'], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows || []);
-    });
-  });
-});
-
-app.get('/api/admin/posts/approved', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.all('SELECT * FROM posts WHERE status = ? ORDER BY featured DESC, created_at DESC', ['approved'], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows || []);
-    });
-  });
-});
-
-app.post('/api/admin/posts/:id/approve', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
-      if (err || !post) return res.status(500).json({ error: 'Post not found' });
-
-      db.run('UPDATE posts SET status = ? WHERE id = ?', ['approved', req.params.id], async (err) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-
-        await sendEmail(post.author_email, 'Your Post Approved!', `<h2>Your post has been approved!</h2>`);
-
-        res.json({ message: 'Post approved' });
-      });
-    });
-  });
-});
-
-app.delete('/api/admin/posts/approved/:id', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.get('SELECT * FROM posts WHERE id = ? AND status = ?', [req.params.id, 'approved'], async (err, post) => {
-      if (err || !post) return res.status(500).json({ error: 'Post not found' });
-
-      db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-
-        await sendEmail(post.author_email, 'Post Removed', `<h2>Your post was removed</h2>`);
-
-        res.json({ message: 'Post deleted' });
-      });
-    });
-  });
-});
-
-app.delete('/api/admin/posts/:id', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
-      if (err || !post) return res.status(500).json({ error: 'Post not found' });
-
-      db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-
-        await sendEmail(post.author_email, 'Post Rejected', `<h2>Your post was rejected</h2>`);
-
-        res.json({ message: 'Post deleted' });
-      });
-    });
-  });
-});
-
-app.get('/api/admin/stats', (req, res) => {
-  db.all('SELECT COUNT(*) as total FROM posts', (err, totalRows) => {
-    db.all('SELECT COUNT(*) as today FROM posts WHERE DATE(created_at) = DATE("now")', (err, todayRows) => {
-      db.all('SELECT COUNT(DISTINCT author_email) as members FROM posts', (err, membersRows) => {
-        res.json({
-          total_posts: totalRows?.[0]?.total || 0,
-          posts_today: todayRows?.[0]?.today || 0,
-          active_members: membersRows?.[0]?.members || 0
-        });
-      });
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
-// API - CO-ADMIN MANAGEMENT (Admin only)
-// ═══════════════════════════════════════════════════════════
-
-app.post('/api/admin/co-admins', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    const { username, password, email } = req.body;
-
-    if (!username || !password || password.length < 6) {
-      return res.status(400).json({ error: 'Username and password (min 6 chars) required' });
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password required' });
     }
 
     const passwordHash = hashPassword(password);
 
-    db.run(
-      'INSERT INTO co_admins (username, password_hash, email) VALUES (?, ?, ?)',
-      [username, passwordHash, email || null],
-      function(err) {
-        if (err) {
-          if (err.message.includes('UNIQUE')) {
-            return res.status(400).json({ error: 'Username already exists' });
-          }
-          return res.status(500).json({ error: 'Database error' });
+    db.get(
+        `SELECT * FROM users WHERE email = ? AND password_hash = ?`,
+        [email, passwordHash],
+        (err, user) => {
+            if (err) {
+                return res.status(500).json({ error: 'Login failed' });
+            }
+
+            if (!user) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            if (!user.is_verified) {
+                return res.status(403).json({ error: 'Please verify your email first' });
+            }
+
+            if (!user.is_approved) {
+                return res.status(403).json({ error: 'Your account is pending admin approval' });
+            }
+
+            const token = generateToken();
+            res.json({
+                token: token,
+                userId: user.id,
+                username: user.username,
+                email: user.email
+            });
         }
-
-        res.status(201).json({ 
-          id: this.lastID, 
-          message: 'Co-admin created successfully' 
-        });
-      }
     );
-  });
 });
 
-app.get('/api/admin/co-admins', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
+// Google OAuth callback (simplified)
+app.post('/api/auth/google', (req, res) => {
+    const { googleId, email, name } = req.body;
 
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
+    db.get(
+        `SELECT * FROM users WHERE google_id = ?`,
+        [googleId],
+        (err, user) => {
+            if (err) {
+                return res.status(500).json({ error: 'Auth failed' });
+            }
 
-    db.all('SELECT id, username, email, created_at, status FROM co_admins ORDER BY created_at DESC', (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows || []);
-    });
-  });
-});
+            if (user) {
+                // Existing user
+                const token = generateToken();
+                return res.json({
+                    token: token,
+                    userId: user.id,
+                    username: user.username,
+                    email: user.email,
+                    isNewUser: false
+                });
+            }
 
-app.delete('/api/admin/co-admins/:id', (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
+            // New Google user - auto-verify and approve
+            db.run(
+                `INSERT INTO users (username, email, google_id, is_verified, is_approved)
+                 VALUES (?, ?, ?, 1, 1)`,
+                [name || email.split('@')[0], email, googleId],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Auth failed' });
+                    }
 
-  db.get('SELECT id FROM admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.run('DELETE FROM co_admins WHERE id = ?', [req.params.id], (err) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json({ message: 'Co-admin deleted' });
-    });
-  });
+                    const token = generateToken();
+                    res.json({
+                        token: token,
+                        userId: this.lastID,
+                        username: name || email.split('@')[0],
+                        email: email,
+                        isNewUser: true
+                    });
+                }
+            );
+        }
+    );
 });
 
 // ═══════════════════════════════════════════════════════════
-// API - CO-ADMIN LOGIN & OPERATIONS
+// POSTS ENDPOINTS
+// ═══════════════════════════════════════════════════════════
+
+// Get all approved posts with featured first
+app.get('/api/posts', (req, res) => {
+    db.all(
+        `SELECT * FROM posts 
+         WHERE status = 'approved' 
+         ORDER BY featured DESC, created_at DESC`,
+        (err, posts) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch posts' });
+            }
+            res.json(posts || []);
+        }
+    );
+});
+
+// Get single post
+app.get('/api/posts/:id', (req, res) => {
+    db.get(
+        `SELECT * FROM posts WHERE id = ? AND status = 'approved'`,
+        [req.params.id],
+        (err, post) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch post' });
+            }
+            res.json(post);
+        }
+    );
+});
+
+// Submit new post
+app.post('/api/posts', (req, res) => {
+    const { title, author_name, author_email, category, tags, description, image_url, user_id } = req.body;
+
+    if (!title || !author_name || !author_email || !category || !description) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    db.run(
+        `INSERT INTO posts (title, author_name, author_email, user_id, category, tags, description, image_url, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [title, author_name, author_email, user_id || null, category, tags || null, description, image_url || null],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to submit post' });
+            }
+            res.json({
+                message: 'Post submitted successfully!',
+                postId: this.lastID
+            });
+        }
+    );
+});
+
+// Mark post as helpful
+app.post('/api/posts/:id/helpful', (req, res) => {
+    db.run(
+        `UPDATE posts SET helpful_count = helpful_count + 1 WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to update' });
+            }
+            res.json({ message: 'Marked as helpful!' });
+        }
+    );
+});
+
+// Upload image
+app.post('/api/upload-image', upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No image provided' });
+    }
+
+    const imageUrl = `/data/uploads/${req.file.filename}`;
+    res.json({
+        message: 'Image uploaded successfully',
+        imageUrl: imageUrl
+    });
+});
+
+// ═══════════════════════════════════════════════════════════
+// COMMENTS ENDPOINTS
+// ═══════════════════════════════════════════════════════════
+
+// Get approved comments for a post
+app.get('/api/posts/:postId/comments', (req, res) => {
+    db.all(
+        `SELECT * FROM comments 
+         WHERE post_id = ? AND status = 'approved'
+         ORDER BY created_at DESC`,
+        [req.params.postId],
+        (err, comments) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch comments' });
+            }
+            res.json(comments || []);
+        }
+    );
+});
+
+// Submit comment (requires login)
+app.post('/api/posts/:postId/comments', (req, res) => {
+    const { userId, authorName, authorEmail, content } = req.body;
+    const postId = req.params.postId;
+
+    if (!userId || !authorName || !authorEmail || !content) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    db.run(
+        `INSERT INTO comments (post_id, user_id, author_name, author_email, content, status)
+         VALUES (?, ?, ?, ?, ?, 'pending')`,
+        [postId, userId, authorName, authorEmail, content],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to submit comment' });
+            }
+            res.json({
+                message: 'Comment submitted for approval!',
+                commentId: this.lastID
+            });
+        }
+    );
+});
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN ENDPOINTS
+// ═══════════════════════════════════════════════════════════
+
+// Admin login
+app.post('/api/admin/login', (req, res) => {
+    const { password } = req.body;
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Ganesh@2025';
+
+    if (password === adminPassword) {
+        const token = generateToken();
+        res.json({ token: token, message: 'Admin login successful' });
+    } else {
+        res.status(401).json({ error: 'Invalid password' });
+    }
+});
+
+// Get pending posts
+app.get('/api/admin/posts/pending', (req, res) => {
+    db.all(
+        `SELECT * FROM posts WHERE status = 'pending' ORDER BY created_at DESC`,
+        (err, posts) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch pending posts' });
+            }
+            res.json(posts || []);
+        }
+    );
+});
+
+// Get approved posts
+app.get('/api/admin/posts/approved', (req, res) => {
+    db.all(
+        `SELECT * FROM posts WHERE status = 'approved' ORDER BY created_at DESC`,
+        (err, posts) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch approved posts' });
+            }
+            res.json(posts || []);
+        }
+    );
+});
+
+// Approve post
+app.post('/api/admin/posts/:id/approve', (req, res) => {
+    db.run(
+        `UPDATE posts SET status = 'approved' WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to approve' });
+            }
+            res.json({ message: 'Post approved!' });
+        }
+    );
+});
+
+// Delete pending post
+app.delete('/api/admin/posts/:id', (req, res) => {
+    db.run(
+        `DELETE FROM posts WHERE id = ? AND status = 'pending'`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete' });
+            }
+            res.json({ message: 'Post deleted!' });
+        }
+    );
+});
+
+// Delete approved post
+app.delete('/api/admin/posts/approved/:id', (req, res) => {
+    db.run(
+        `DELETE FROM posts WHERE id = ? AND status = 'approved'`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete' });
+            }
+            res.json({ message: 'Post deleted!' });
+        }
+    );
+});
+
+// Get pending comments
+app.get('/api/admin/comments/pending', (req, res) => {
+    db.all(
+        `SELECT c.*, p.title as post_title FROM comments c
+         JOIN posts p ON c.post_id = p.id
+         WHERE c.status = 'pending'
+         ORDER BY c.created_at DESC`,
+        (err, comments) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch comments' });
+            }
+            res.json(comments || []);
+        }
+    );
+});
+
+// Approve comment
+app.post('/api/admin/comments/:id/approve', (req, res) => {
+    db.run(
+        `UPDATE comments SET status = 'approved' WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to approve' });
+            }
+            res.json({ message: 'Comment approved!' });
+        }
+    );
+});
+
+// Delete comment
+app.delete('/api/admin/comments/:id', (req, res) => {
+    db.run(
+        `DELETE FROM comments WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete' });
+            }
+            res.json({ message: 'Comment deleted!' });
+        }
+    );
+});
+
+// Toggle featured post
+app.post('/api/admin/posts/:id/featured', (req, res) => {
+    const { featured } = req.body;
+    db.run(
+        `UPDATE posts SET featured = ? WHERE id = ?`,
+        [featured ? 1 : 0, req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to update' });
+            }
+            res.json({ message: featured ? 'Post featured!' : 'Post unfeatured!' });
+        }
+    );
+});
+
+// Get subscribers
+app.get('/api/admin/subscribers', (req, res) => {
+    db.all(
+        `SELECT * FROM subscribers ORDER BY subscribed_at DESC`,
+        (err, subscribers) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch subscribers' });
+            }
+            res.json(subscribers || []);
+        }
+    );
+});
+
+// Get statistics
+app.get('/api/admin/stats', (req, res) => {
+    db.get(
+        `SELECT 
+            (SELECT COUNT(*) FROM posts WHERE status = 'approved') as totalPosts,
+            (SELECT COUNT(*) FROM posts WHERE DATE(created_at) = DATE('now')) as postsToday,
+            (SELECT COUNT(DISTINCT user_id) FROM posts) as activeMembers,
+            (SELECT COUNT(*) FROM subscribers) as subscribers,
+            (SELECT COUNT(*) FROM comments WHERE status = 'pending') as pendingComments,
+            (SELECT COUNT(*) FROM users WHERE is_approved = 1) as approvedUsers`,
+        (err, stats) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch stats' });
+            }
+            res.json(stats || {});
+        }
+    );
+});
+
+// Get pending users
+app.get('/api/admin/users/pending', (req, res) => {
+    db.all(
+        `SELECT id, username, email, created_at FROM users 
+         WHERE is_approved = 0 AND is_verified = 1
+         ORDER BY created_at DESC`,
+        (err, users) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch users' });
+            }
+            res.json(users || []);
+        }
+    );
+});
+
+// Approve user
+app.post('/api/admin/users/:id/approve', (req, res) => {
+    db.run(
+        `UPDATE users SET is_approved = 1 WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to approve user' });
+            }
+            res.json({ message: 'User approved!' });
+        }
+    );
+});
+
+// Reject user
+app.delete('/api/admin/users/:id', (req, res) => {
+    db.run(
+        `DELETE FROM users WHERE id = ? AND is_approved = 0`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to reject user' });
+            }
+            res.json({ message: 'User rejected!' });
+        }
+    );
+});
+
+// ═══════════════════════════════════════════════════════════
+// SEARCH ENDPOINT
+// ═══════════════════════════════════════════════════════════
+
+app.get('/api/search', (req, res) => {
+    const { q } = req.query;
+
+    if (!q || q.length < 2) {
+        return res.json([]);
+    }
+
+    const searchTerm = `%${q}%`;
+
+    db.all(
+        `SELECT p.*, 'post' as type FROM posts p
+         WHERE p.status = 'approved' AND (p.title LIKE ? OR p.description LIKE ? OR p.tags LIKE ?)
+         UNION
+         SELECT c.id, c.post_id, c.content as description, c.author_name as title, c.author_email, null, null, c.status, 0, 0, c.created_at, 'comment' as type
+         FROM comments c
+         WHERE c.status = 'approved' AND c.content LIKE ?
+         ORDER BY created_at DESC`,
+        [searchTerm, searchTerm, searchTerm, searchTerm],
+        (err, results) => {
+            if (err) {
+                return res.status(500).json({ error: 'Search failed' });
+            }
+            res.json(results || []);
+        }
+    );
+});
+
+// ═══════════════════════════════════════════════════════════
+// NEWSLETTER ENDPOINTS
+// ═══════════════════════════════════════════════════════════
+
+app.post('/api/subscribe', (req, res) => {
+    const { email, name } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email required' });
+    }
+
+    db.run(
+        `INSERT OR IGNORE INTO subscribers (email, name) VALUES (?, ?)`,
+        [email, name || ''],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Subscription failed' });
+            }
+            res.json({ message: 'Subscribed successfully!' });
+        }
+    );
+});
+
+app.get('/api/subscribers/count', (req, res) => {
+    db.get(
+        `SELECT COUNT(*) as count FROM subscribers`,
+        (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch count' });
+            }
+            res.json(result);
+        }
+    );
+});
+
+// ═══════════════════════════════════════════════════════════
+// CO-ADMIN ENDPOINTS (Same as Admin but limited)
 // ═══════════════════════════════════════════════════════════
 
 app.post('/api/co-admin/login', (req, res) => {
-  const { username, password } = req.body;
+    const { username, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
-  }
+    db.get(
+        `SELECT * FROM co_admins WHERE username = ?`,
+        [username],
+        (err, coAdmin) => {
+            if (err || !coAdmin) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
 
-  const passwordHash = hashPassword(password);
+            const passwordHash = hashPassword(password);
+            if (coAdmin.password_hash !== passwordHash) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
 
-  db.get('SELECT id FROM co_admins WHERE username = ? AND password_hash = ? AND status = ?', 
-    [username, passwordHash, 'active'], 
-    (err, coAdmin) => {
-      if (err || !coAdmin) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      const token = generateToken();
-      db.run('INSERT INTO co_admin_sessions (token, co_admin_id) VALUES (?, ?)', 
-        [token, coAdmin.id], 
-        (err) => {
-          if (err) return res.status(500).json({ error: 'Session error' });
-          res.json({ token, message: 'Login successful' });
+            const token = generateToken();
+            res.json({ token: token, coAdminId: coAdmin.id });
         }
-      );
-    }
-  );
+    );
 });
 
-// Co-admin: Get pending posts
-app.get('/api/co-admin/posts/pending', (req, res) => {
-  const token = req.headers['x-co-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.all('SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC', ['pending'], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows || []);
-    });
-  });
+// Co-admin pending comments (same approval endpoints)
+app.get('/api/co-admin/comments/pending', (req, res) => {
+    db.all(
+        `SELECT c.*, p.title as post_title FROM comments c
+         JOIN posts p ON c.post_id = p.id
+         WHERE c.status = 'pending'
+         ORDER BY c.created_at DESC`,
+        (err, comments) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch comments' });
+            }
+            res.json(comments || []);
+        }
+    );
 });
 
-// Co-admin: Get approved posts (read-only)
-app.get('/api/co-admin/posts/approved', (req, res) => {
-  const token = req.headers['x-co-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.all('SELECT * FROM posts WHERE status = ? ORDER BY featured DESC, created_at DESC', ['approved'], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows || []);
-    });
-  });
-});
-
-// Co-admin: Approve post
-app.post('/api/co-admin/posts/:id/approve', (req, res) => {
-  const token = req.headers['x-co-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
-      if (err || !post) return res.status(500).json({ error: 'Post not found' });
-
-      db.run('UPDATE posts SET status = ? WHERE id = ?', ['approved', req.params.id], async (err) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-
-        await sendEmail(post.author_email, 'Your Post Approved!', `<h2>Your post has been approved!</h2>`);
-
-        res.json({ message: 'Post approved' });
-      });
-    });
-  });
-});
-
-// Co-admin: Reject post
-app.delete('/api/co-admin/posts/:id', (req, res) => {
-  const token = req.headers['x-co-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], async (err, post) => {
-      if (err || !post) return res.status(500).json({ error: 'Post not found' });
-
-      db.run('DELETE FROM posts WHERE id = ?', [req.params.id], async (err) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-
-        await sendEmail(post.author_email, 'Post Rejected', `<h2>Your post was rejected</h2>`);
-
-        res.json({ message: 'Post deleted' });
-      });
-    });
-  });
-});
-
-// Co-admin: Get stats (read-only)
+// Co-admin stats (analytics)
 app.get('/api/co-admin/stats', (req, res) => {
-  const token = req.headers['x-co-admin-token'];
-  if (!token) return res.status(401).json({ error: 'No token' });
-
-  db.get('SELECT co_admin_id FROM co_admin_sessions WHERE token = ?', [token], (err, session) => {
-    if (err || !session) return res.status(401).json({ error: 'Unauthorized' });
-
-    db.all('SELECT COUNT(*) as total FROM posts', (err, totalRows) => {
-      db.all('SELECT COUNT(*) as today FROM posts WHERE DATE(created_at) = DATE("now")', (err, todayRows) => {
-        db.all('SELECT COUNT(DISTINCT author_email) as members FROM posts', (err, membersRows) => {
-          res.json({
-            total_posts: totalRows?.[0]?.total || 0,
-            posts_today: todayRows?.[0]?.today || 0,
-            active_members: membersRows?.[0]?.members || 0
-          });
-        });
-      });
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
-// ERROR HANDLING
-// ═══════════════════════════════════════════════════════════
-
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File too large. Max 1MB.' });
-    }
-  }
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+    db.get(
+        `SELECT 
+            (SELECT COUNT(*) FROM posts WHERE status = 'approved') as totalPosts,
+            (SELECT COUNT(*) FROM comments WHERE status = 'approved') as approvedComments,
+            (SELECT COUNT(*) FROM comments WHERE status = 'pending') as pendingComments,
+            (SELECT COUNT(*) FROM users WHERE is_approved = 1) as approvedUsers`,
+        (err, stats) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch stats' });
+            }
+            res.json(stats || {});
+        }
+    );
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -685,14 +819,6 @@ app.use((req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 app.listen(PORT, () => {
-  console.log('═══════════════════════════════════════════════════════════════════════════════');
-  console.log('🚀 FORUM WITH CO-ADMIN SYSTEM RUNNING');
-  console.log('═══════════════════════════════════════════════════════════════════════════════');
-  console.log(`✅ Server: http://localhost:${PORT}`);
-  console.log(`✅ Main: http://localhost:${PORT}/`);
-  console.log(`✅ Community: http://localhost:${PORT}/community/`);
-  console.log(`✅ Co-Admin System: Active`);
-  console.log('═══════════════════════════════════════════════════════════════════════════════');
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ All 6 EPIC features ready!`);
 });
-
-module.exports = app;
