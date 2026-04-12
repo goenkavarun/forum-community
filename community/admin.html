@@ -59,6 +59,7 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #ddd;
             flex-wrap: wrap;
+            overflow-x: auto;
         }
 
         .tab-btn {
@@ -67,9 +68,10 @@
             border: none;
             border-bottom: 3px solid transparent;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.95em;
             color: #666;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .tab-btn.active {
@@ -141,6 +143,83 @@
             flex-wrap: wrap;
         }
 
+        .comment-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 3px solid #FF6B00;
+        }
+
+        .comment-author {
+            font-weight: bold;
+            color: #0B1B3E;
+            margin-bottom: 5px;
+        }
+
+        .comment-content {
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .comment-meta {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .user-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 3px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: bold;
+            color: #0B1B3E;
+            margin-bottom: 3px;
+        }
+
+        .user-email {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .subscriber-item {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            border-left: 3px solid #2196F3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .co-admin-item {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 3px solid #9C27B0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .co-admin-info {
+            flex: 1;
+        }
+
         .btn {
             padding: 10px 15px;
             border: none;
@@ -166,6 +245,20 @@
 
         .btn-delete:hover {
             background: #da190b;
+        }
+
+        .btn-featured {
+            background: #FFC107;
+            color: #333;
+        }
+
+        .btn-featured:hover {
+            background: #FFA000;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.85em;
         }
 
         .stat-card {
@@ -249,6 +342,23 @@
             box-shadow: 0 0 5px rgba(255,107,0,0.3);
         }
 
+        .form-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+
+        .featured-badge {
+            background: #FFC107;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
@@ -261,6 +371,11 @@
 
             .btn {
                 width: 100%;
+            }
+
+            .user-card, .co-admin-item, .subscriber-item {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -277,7 +392,12 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('pending')">⏳ Pending Posts</button>
             <button class="tab-btn" onclick="switchTab('approved')">✅ Approved Posts</button>
+            <button class="tab-btn" onclick="switchTab('comments')">💬 Comments</button>
+            <button class="tab-btn" onclick="switchTab('users')">👥 Users</button>
+            <button class="tab-btn" onclick="switchTab('subscribers')">📧 Subscribers</button>
+            <button class="tab-btn" onclick="switchTab('coadmins')">🟠 Co-Admins</button>
             <button class="tab-btn" onclick="switchTab('stats')">📊 Statistics</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
         </div>
 
         <!-- Pending Posts -->
@@ -291,6 +411,52 @@
         <div id="approved" class="tab-content">
             <div class="posts-grid" id="approvedPosts">
                 <div class="empty-state">Loading approved posts...</div>
+            </div>
+        </div>
+
+        <!-- Comments -->
+        <div id="comments" class="tab-content">
+            <div id="commentsList">
+                <div class="empty-state">Loading comments...</div>
+            </div>
+        </div>
+
+        <!-- Users -->
+        <div id="users" class="tab-content">
+            <div id="usersList">
+                <div class="empty-state">Loading users...</div>
+            </div>
+        </div>
+
+        <!-- Subscribers -->
+        <div id="subscribers" class="tab-content">
+            <div id="subscribersList">
+                <div class="empty-state">Loading subscribers...</div>
+            </div>
+        </div>
+
+        <!-- Co-Admins -->
+        <div id="coadmins" class="tab-content">
+            <div class="form-box">
+                <h3 style="margin-bottom: 15px; color: #0B1B3E;">➕ Add New Co-Admin</h3>
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="coAdminUsername" placeholder="username">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="coAdminEmail" placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="coAdminPassword" placeholder="secure password">
+                </div>
+                <button class="btn" style="background: #9C27B0; color: white; width: 100%;" onclick="createCoAdmin()">Create Co-Admin</button>
+            </div>
+
+            <h3 style="color: #0B1B3E; margin-bottom: 15px;">📋 Existing Co-Admins</h3>
+            <div id="coAdminsList">
+                <div class="empty-state">Loading co-admins...</div>
             </div>
         </div>
 
@@ -313,6 +479,30 @@
                     <div class="stat-number" id="statSubscribers">0</div>
                     <div class="stat-label">Subscribers</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statComments">0</div>
+                    <div class="stat-label">Total Comments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statUsers">0</div>
+                    <div class="stat-label">Registered Users</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="settings" class="tab-content">
+            <div class="form-box">
+                <h3 style="margin-bottom: 15px; color: #0B1B3E;">🔑 Change Admin Password</h3>
+                <div class="form-group">
+                    <label>New Password:</label>
+                    <input type="password" id="newPassword" placeholder="New password">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password:</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm password">
+                </div>
+                <button class="btn" style="background: #FF6B00; color: white; width: 100%;" onclick="changePassword()">Update Password</button>
             </div>
         </div>
     </div>
@@ -330,13 +520,20 @@
             console.log('📊 Admin page loaded');
             loadPendingPosts();
             loadApprovedPosts();
+            loadComments();
+            loadUsers();
+            loadSubscribers();
+            loadCoAdmins();
             loadStats();
         });
 
-        // Refresh every 30 seconds
         setInterval(() => {
             loadPendingPosts();
             loadApprovedPosts();
+            loadComments();
+            loadUsers();
+            loadSubscribers();
+            loadCoAdmins();
             loadStats();
         }, 30000);
 
@@ -348,22 +545,18 @@
         }
 
         function loadPendingPosts() {
-            console.log('📥 Loading pending posts...');
             fetch(`${API_BASE}/admin/posts/pending`)
                 .then(r => r.json())
                 .then(posts => {
                     if (!Array.isArray(posts)) posts = [];
-                    console.log('✅ Pending posts:', posts.length);
-                    
                     if (posts.length === 0) {
                         document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">✅ No pending posts</div>';
                         return;
                     }
-
                     document.getElementById('pendingPosts').innerHTML = posts.map(post => `
                         <div class="post-card">
                             <div class="post-title">${escapeHtml(post.title)}</div>
-                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong></div>
                             <span class="post-category">${escapeHtml(post.category)}</span>
                             <div class="post-description">${escapeHtml(post.description)}</div>
                             ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
@@ -374,132 +567,307 @@
                         </div>
                     `).join('');
                 })
-                .catch(err => {
-                    console.error('❌ Error loading pending posts:', err);
-                    document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">Error loading posts</div>';
-                });
+                .catch(err => console.error('Error:', err));
         }
 
         function loadApprovedPosts() {
-            console.log('✅ Loading approved posts...');
             fetch(`${API_BASE}/admin/posts/approved`)
                 .then(r => r.json())
                 .then(posts => {
                     if (!Array.isArray(posts)) posts = [];
-                    console.log('✅ Approved posts:', posts.length);
-                    
                     if (posts.length === 0) {
                         document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
                         return;
                     }
-
                     document.getElementById('approvedPosts').innerHTML = posts.map(post => `
                         <div class="post-card">
-                            <div class="post-title">${escapeHtml(post.title)}</div>
-                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> (${escapeHtml(post.author_email)})</div>
+                            <div class="post-title">${escapeHtml(post.title)} ${post.featured ? '<span class="featured-badge">⭐ FEATURED</span>' : ''}</div>
+                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong></div>
                             <span class="post-category">${escapeHtml(post.category)}</span>
                             <div class="post-description">${escapeHtml(post.description)}</div>
                             ${post.image_url ? `<img src="${post.image_url}" class="post-image">` : ''}
                             <div class="post-actions">
-                                <button class="btn btn-delete" onclick="deletePost(${post.id})">🗑️ Delete</button>
+                                <button class="btn btn-featured btn-small" onclick="toggleFeatured(${post.id}, ${post.featured ? 0 : 1})">
+                                    ${post.featured ? '⭐ Unfeature' : '☆ Feature'}
+                                </button>
+                                <button class="btn btn-delete btn-small" onclick="deleteApprovedPost(${post.id})">🗑️ Delete</button>
                             </div>
                         </div>
                     `).join('');
                 })
-                .catch(err => {
-                    console.error('❌ Error loading approved posts:', err);
-                    document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">Error loading posts</div>';
-                });
+                .catch(err => console.error('Error:', err));
         }
 
-        function approvePost(id) {
-            if (!confirm('Approve this post?')) return;
-            
-            fetch(`${API_BASE}/admin/posts/${id}/approve`, { method: 'POST' })
+        function loadComments() {
+            fetch(`${API_BASE}/admin/comments/pending`)
                 .then(r => r.json())
-                .then(data => {
-                    showMessage('✅ Post approved', 'success');
-                    loadPendingPosts();
-                    loadApprovedPosts();
+                .then(comments => {
+                    if (!Array.isArray(comments)) comments = [];
+                    if (comments.length === 0) {
+                        document.getElementById('commentsList').innerHTML = '<div class="empty-state">✅ No pending comments</div>';
+                        return;
+                    }
+                    document.getElementById('commentsList').innerHTML = comments.map(c => `
+                        <div class="comment-card">
+                            <div class="comment-author">${escapeHtml(c.author_name)}</div>
+                            <div class="comment-content">${escapeHtml(c.content)}</div>
+                            <div class="comment-meta">Post: <strong>${escapeHtml(c.post_title)}</strong> | ${new Date(c.created_at).toLocaleDateString()}</div>
+                            <div class="post-actions" style="margin-top: 10px;">
+                                <button class="btn btn-approve btn-small" onclick="approveComment(${c.id})">✅ Approve</button>
+                                <button class="btn btn-delete btn-small" onclick="deleteComment(${c.id})">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
                 })
-                .catch(err => {
-                    console.error('Error:', err);
-                    showMessage('❌ Error approving post', 'error');
-                });
+                .catch(err => console.error('Error:', err));
         }
 
-        function rejectPost(id) {
-            if (!confirm('Reject this post?')) return;
-            
-            fetch(`${API_BASE}/admin/posts/${id}`, { method: 'DELETE' })
+        function loadUsers() {
+            fetch(`${API_BASE}/admin/users/pending`)
                 .then(r => r.json())
-                .then(data => {
-                    showMessage('✅ Post rejected', 'success');
-                    loadPendingPosts();
+                .then(users => {
+                    if (!Array.isArray(users)) users = [];
+                    if (users.length === 0) {
+                        document.getElementById('usersList').innerHTML = '<div class="empty-state">✅ All users approved</div>';
+                        return;
+                    }
+                    document.getElementById('usersList').innerHTML = users.map(u => `
+                        <div class="user-card">
+                            <div class="user-info">
+                                <div class="user-name">${escapeHtml(u.username)}</div>
+                                <div class="user-email">${escapeHtml(u.email)}</div>
+                            </div>
+                            <div class="post-actions">
+                                <button class="btn btn-approve btn-small" onclick="approveUser(${u.id})">✅ Approve</button>
+                                <button class="btn btn-delete btn-small" onclick="deleteUser(${u.id})">❌ Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
                 })
-                .catch(err => {
-                    console.error('Error:', err);
-                    showMessage('❌ Error rejecting post', 'error');
-                });
+                .catch(err => console.error('Error:', err));
         }
 
-        function deletePost(id) {
-            if (!confirm('Delete this post?')) return;
-            
-            fetch(`${API_BASE}/admin/posts/approved/${id}`, { method: 'DELETE' })
+        function loadSubscribers() {
+            fetch(`${API_BASE}/admin/subscribers`)
                 .then(r => r.json())
-                .then(data => {
-                    showMessage('✅ Post deleted', 'success');
-                    loadApprovedPosts();
+                .then(subs => {
+                    if (!Array.isArray(subs) || subs.length === 0) {
+                        document.getElementById('subscribersList').innerHTML = '<div class="empty-state">No subscribers yet</div>';
+                        return;
+                    }
+                    document.getElementById('subscribersList').innerHTML = subs.map(s => `
+                        <div class="subscriber-item">
+                            <div>
+                                <strong>${escapeHtml(s.email)}</strong>
+                                ${s.name ? ` - ${escapeHtml(s.name)}` : ''}
+                                <div style="font-size: 0.85em; color: #999;">${new Date(s.subscribed_at).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                    `).join('');
                 })
-                .catch(err => {
-                    console.error('Error:', err);
-                    showMessage('❌ Error deleting post', 'error');
-                });
+                .catch(err => console.error('Error:', err));
+        }
+
+        function loadCoAdmins() {
+            fetch(`${API_BASE}/admin/co-admins`)
+                .then(r => r.json())
+                .then(admins => {
+                    if (!Array.isArray(admins) || admins.length === 0) {
+                        document.getElementById('coAdminsList').innerHTML = '<div class="empty-state">No co-admins yet</div>';
+                        return;
+                    }
+                    document.getElementById('coAdminsList').innerHTML = admins.map(a => `
+                        <div class="co-admin-item">
+                            <div class="co-admin-info">
+                                <div style="font-weight: bold; color: #0B1B3E;">${escapeHtml(a.username)}</div>
+                                <div style="font-size: 0.9em; color: #999;">${escapeHtml(a.email)}</div>
+                            </div>
+                            <button class="btn btn-delete btn-small" onclick="deleteCoAdmin(${a.id})">🗑️ Delete</button>
+                        </div>
+                    `).join('');
+                })
+                .catch(err => console.error('Error:', err));
         }
 
         function loadStats() {
-            console.log('📊 Loading stats...');
-            
-            // Fetch all posts and calculate stats
             fetch(`${API_BASE}/posts`)
                 .then(r => r.json())
                 .then(posts => {
                     if (!Array.isArray(posts)) posts = [];
-                    console.log('✅ Posts fetched:', posts.length);
-                    
                     const totalPosts = posts.length;
-                    
                     const today = new Date().toDateString();
-                    const postsToday = posts.filter(post => 
-                        new Date(post.created_at).toDateString() === today
-                    ).length;
-                    
-                    const uniqueMembers = new Set(posts.map(post => post.author_email)).size;
+                    const postsToday = posts.filter(p => new Date(p.created_at).toDateString() === today).length;
+                    const uniqueMembers = new Set(posts.map(p => p.author_email)).size;
                     
                     document.getElementById('statTotal').textContent = totalPosts;
                     document.getElementById('statToday').textContent = postsToday;
                     document.getElementById('statMembers').textContent = uniqueMembers;
-                    
-                    console.log('✅ Stats updated:', { totalPosts, postsToday, uniqueMembers });
                 })
-                .catch(err => {
-                    console.error('❌ Stats error:', err);
-                    document.getElementById('statTotal').textContent = '0';
-                    document.getElementById('statToday').textContent = '0';
-                    document.getElementById('statMembers').textContent = '0';
-                });
+                .catch(err => console.error('Error:', err));
 
-            // Fetch subscribers count
             fetch(`${API_BASE}/subscribers/count`)
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById('statSubscribers').textContent = data.count || 0;
                 })
-                .catch(err => {
-                    console.error('Subscribers error:', err);
-                    document.getElementById('statSubscribers').textContent = '0';
-                });
+                .catch(err => console.error('Error:', err));
+        }
+
+        function approvePost(id) {
+            if (!confirm('Approve this post?')) return;
+            fetch(`${API_BASE}/admin/posts/${id}/approve`, { method: 'POST' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ Post approved', 'success');
+                    loadPendingPosts();
+                    loadApprovedPosts();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function rejectPost(id) {
+            if (!confirm('Reject this post?')) return;
+            fetch(`${API_BASE}/admin/posts/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ Post rejected', 'success');
+                    loadPendingPosts();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function deleteApprovedPost(id) {
+            if (!confirm('Delete this post?')) return;
+            fetch(`${API_BASE}/admin/posts/approved/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ Post deleted', 'success');
+                    loadApprovedPosts();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function toggleFeatured(id, featured) {
+            fetch(`${API_BASE}/admin/posts/${id}/featured`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ featured: featured })
+            })
+            .then(r => r.json())
+            .then(() => {
+                showMessage(featured ? '⭐ Post featured' : '☆ Post unfeatured', 'success');
+                loadApprovedPosts();
+            })
+            .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function approveComment(id) {
+            if (!confirm('Approve this comment?')) return;
+            fetch(`${API_BASE}/admin/comments/${id}/approve`, { method: 'POST' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ Comment approved', 'success');
+                    loadComments();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function deleteComment(id) {
+            if (!confirm('Delete this comment?')) return;
+            fetch(`${API_BASE}/admin/comments/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ Comment deleted', 'success');
+                    loadComments();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function approveUser(id) {
+            if (!confirm('Approve this user?')) return;
+            fetch(`${API_BASE}/admin/users/${id}/approve`, { method: 'POST' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ User approved', 'success');
+                    loadUsers();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function deleteUser(id) {
+            if (!confirm('Reject this user?')) return;
+            fetch(`${API_BASE}/admin/users/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ User rejected', 'success');
+                    loadUsers();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function createCoAdmin() {
+            const username = document.getElementById('coAdminUsername').value;
+            const email = document.getElementById('coAdminEmail').value;
+            const password = document.getElementById('coAdminPassword').value;
+
+            if (!username || !email || !password) {
+                showMessage('❌ All fields required', 'error');
+                return;
+            }
+
+            fetch(`${API_BASE}/admin/co-admins/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                showMessage('✅ Co-admin created', 'success');
+                document.getElementById('coAdminUsername').value = '';
+                document.getElementById('coAdminEmail').value = '';
+                document.getElementById('coAdminPassword').value = '';
+                loadCoAdmins();
+            })
+            .catch(err => showMessage('❌ Error creating co-admin', 'error'));
+        }
+
+        function deleteCoAdmin(id) {
+            if (!confirm('Delete this co-admin?')) return;
+            fetch(`${API_BASE}/admin/co-admins/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(() => {
+                    showMessage('✅ Co-admin deleted', 'success');
+                    loadCoAdmins();
+                })
+                .catch(err => showMessage('❌ Error', 'error'));
+        }
+
+        function changePassword() {
+            const newPwd = document.getElementById('newPassword').value;
+            const confirmPwd = document.getElementById('confirmPassword').value;
+
+            if (!newPwd || !confirmPwd) {
+                showMessage('❌ Both fields required', 'error');
+                return;
+            }
+
+            if (newPwd !== confirmPwd) {
+                showMessage('❌ Passwords do not match', 'error');
+                return;
+            }
+
+            fetch(`${API_BASE}/admin/change-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword: newPwd })
+            })
+            .then(r => r.json())
+            .then(data => {
+                showMessage('✅ Password changed successfully', 'success');
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            })
+            .catch(err => showMessage('❌ Error changing password', 'error'));
         }
 
         function logout() {
