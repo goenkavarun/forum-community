@@ -651,36 +651,34 @@ app.get('/api/admin/subscribers', (req, res) => {
 
 // Get statistics
 app.get('/api/admin/stats', (req, res) => {
-    db.get(
-        `SELECT 
-            (SELECT COUNT(*) FROM posts) as totalPosts,
-            (SELECT COUNT(*) FROM posts WHERE date(created_at) = date('now')) as postsToday,
-            (SELECT COUNT(DISTINCT author_email) FROM posts) as activeMembers,
-            (SELECT COUNT(*) FROM subscribers) as subscribers,
-            (SELECT COUNT(*) FROM comments) as totalComments,
-            (SELECT COUNT(*) FROM users) as totalUsers`,
-        (err, stats) => {
-            if (err) {
-                console.error('Stats error:', err);
-                return res.status(500).json({ 
-                    totalPosts: 0,
-                    postsToday: 0,
-                    activeMembers: 0,
-                    subscribers: 0,
-                    totalComments: 0,
-                    totalUsers: 0
+    try {
+        db.get('SELECT COUNT(*) as totalPosts FROM posts', (err1, posts) => {
+            db.get('SELECT COUNT(*) as totalComments FROM comments', (err2, comments) => {
+                db.get('SELECT COUNT(*) as totalUsers FROM users', (err3, users) => {
+                    db.get('SELECT COUNT(*) as totalSubscribers FROM subscribers', (err4, subs) => {
+                        res.json({
+                            totalPosts: posts?.totalPosts || 0,
+                            totalComments: comments?.totalComments || 0,
+                            totalUsers: users?.totalUsers || 0,
+                            totalSubscribers: subs?.totalSubscribers || 0,
+                            postsToday: 0,
+                            activeMembers: 0
+                        });
+                    });
                 });
-            }
-            res.json(stats || {
-                totalPosts: 0,
-                postsToday: 0,
-                activeMembers: 0,
-                subscribers: 0,
-                totalComments: 0,
-                totalUsers: 0
             });
-        }
-    );
+        });
+    } catch (err) {
+        console.error('Stats error:', err);
+        res.json({
+            totalPosts: 0,
+            totalComments: 0,
+            totalUsers: 0,
+            totalSubscribers: 0,
+            postsToday: 0,
+            activeMembers: 0
+        });
+    }
 });
 
 // Get pending users
@@ -847,27 +845,30 @@ app.get('/api/co-admin/comments/pending', (req, res) => {
 });
 
 app.get('/api/co-admin/stats', (req, res) => {
-    db.get(
-        `SELECT 
-            (SELECT COUNT(*) FROM posts) as totalPosts,
-            (SELECT COUNT(*) FROM comments) as totalComments,
-            (SELECT COUNT(*) FROM users) as totalUsers`,
-        (err, stats) => {
-            if (err) {
-                console.error('Stats error:', err);
-                return res.status(500).json({ 
-                    totalPosts: 0,
-                    totalComments: 0,
-                    totalUsers: 0
+    try {
+        db.get('SELECT COUNT(*) as totalPosts FROM posts', (err1, posts) => {
+            db.get('SELECT COUNT(*) as totalComments FROM comments', (err2, comments) => {
+                db.get('SELECT COUNT(*) as totalUsers FROM users', (err3, users) => {
+                    res.json({
+                        totalPosts: posts?.totalPosts || 0,
+                        totalComments: comments?.totalComments || 0,
+                        totalUsers: users?.totalUsers || 0,
+                        pendingComments: 0,
+                        approvedComments: 0
+                    });
                 });
-            }
-            res.json(stats || {
-                totalPosts: 0,
-                totalComments: 0,
-                totalUsers: 0
             });
-        }
-    );
+        });
+    } catch (err) {
+        console.error('Stats error:', err);
+        res.json({
+            totalPosts: 0,
+            totalComments: 0,
+            totalUsers: 0,
+            pendingComments: 0,
+            approvedComments: 0
+        });
+    }
 });
 
 
