@@ -15,11 +15,13 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 app.set('trust proxy', 1);
+
 // Fix Content Security Policy
 app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;");
     next();
 });
+    
 // ═══════════════════════════════════════════════════════════
 // CREATE DATA DIRECTORY FIRST (before using it!)
 // ═══════════════════════════════════════════════════════════
