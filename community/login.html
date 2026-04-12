@@ -326,7 +326,7 @@
 
             setLoading(true);
 
-            fetch(API_BASE + '/register', {
+            fetch(API_BASE + '/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password })
