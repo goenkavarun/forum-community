@@ -27,12 +27,14 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(dataDir, 'uploads')));
 
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests, please try again later'
+    max: 1000,  // Increased from 100
+    message: 'Too many requests, please try again later',
+    skip: (req) => req.path.startsWith('/api/')  // Skip rate limit for API
 });
 app.use(limiter);
 
@@ -419,7 +421,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
         return res.status(400).json({ error: 'No image provided' });
     }
 
-    const imageUrl = `/data/uploads/${req.file.filename}`;
+    const imageUrl = `/uploads/${req.file.filename}`;
     res.json({
         message: 'Image uploaded successfully',
         imageUrl: imageUrl
