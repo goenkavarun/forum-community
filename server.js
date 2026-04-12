@@ -400,35 +400,28 @@ app.get('/api/posts/:id', (req, res) => {
     );
 });
 
-// Submit new post
+// Submit new post - ULTRA SIMPLE
 app.post('/api/posts', (req, res) => {
-    try {
-        const { title, author_name, author_email, category, tags, description, image_url, user_id } = req.body;
-
-        if (!title || !author_name || !author_email || !category || !description) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-
-        db.run(
-            `INSERT INTO posts (title, author_name, author_email, user_id, category, tags, description, image_url, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-            [title, author_name, author_email, user_id || null, category, tags || null, description, image_url || null],
-            function(err) {
-                if (err) {
-                    console.error('Post insert error:', err);
-                    return res.status(500).json({ error: 'Failed to submit post: ' + err.message });
-                }
-                console.log('✅ Post created:', this.lastID);
-                res.json({
-                    message: 'Post submitted successfully!',
-                    postId: this.lastID
-                });
-            }
-        );
-    } catch (error) {
-        console.error('Post endpoint error:', error);
-        res.status(500).json({ error: 'Server error: ' + error.message });
+    console.log('📝 Post received:', req.body);
+    
+    const { title, author_name, author_email, category, description } = req.body;
+    
+    if (!title || !author_name || !author_email || !category || !description) {
+        console.error('❌ Missing fields');
+        return res.status(400).json({ error: 'All fields required' });
     }
+
+    const sql = `INSERT INTO posts (title, author_name, author_email, category, description, status) 
+                 VALUES (?, ?, ?, ?, ?, 'pending')`;
+    
+    db.run(sql, [title, author_name, author_email, category, description], function(err) {
+        if (err) {
+            console.error('❌ DB Error:', err.message);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log('✅ Post inserted with ID:', this.lastID);
+        res.json({ message: 'Post submitted!', postId: this.lastID });
+    });
 });
 
 // Mark post as helpful
