@@ -26,7 +26,7 @@ app.use(cors({
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-app.use(express.static(path.join(__dirname, 'nodejs')));
+app.use(express.static(path.join(__dirname)));
 
 // Rate limiting
 const limiter = rateLimit({
