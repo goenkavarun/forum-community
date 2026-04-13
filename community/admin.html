@@ -579,9 +579,21 @@
             <div id="pending" class="tab-content active">
                 <div class="posts-grid" id="pendingPosts">
                     <div class="empty-state">Loading pending posts...</div>
+                </div
+                        <div id="users" class="tab-content">
+                            <h2>👥 Pending Users - Approval Required</h2>
+                        <div class="success-message" id="pendingSuccess"></div>
+                        <div id="pendingUsers"></div>
                 </div>
-        
-                <!-- Approved Posts -->
+
+<div id="approved" class="tab-content">
+    <h2>✅ Approved Users - Password Reset</h2>
+    <div class="success-message" id="approvedSuccess"></div>
+    <div id="approvedUsers"></div>
+</div>    
+            </div>
+
+            <!-- Approved Posts -->
             <div id="approved" class="tab-content">
                 <div class="posts-grid" id="approvedPosts">
                     <div class="empty-state">Loading approved posts...</div>
@@ -595,11 +607,15 @@
                 </div>
             </div>
 
-            <!-- Users -->
+            <!-- Users - Pending and Approved -->
             <div id="users" class="tab-content">
-                <div id="usersList">
-                    <div class="empty-state">Loading users...</div>
-                </div>
+                <h2>👥 Pending Users - Approval Required</h2>
+                <div id="pendingSuccess" class="success-message"></div>
+                <div id="pendingUsers"></div>
+
+                <h2 style="margin-top: 30px;">✅ Approved Users - Password Reset</h2>
+                <div id="approvedSuccess" class="success-message"></div>
+                <div id="approvedUsers"></div>
             </div>
 
             <!-- Subscribers -->
@@ -685,6 +701,7 @@
     <script>
         const API_BASE = '/api';
         let adminToken = localStorage.getItem('adminToken');
+        let currentResetUserId = null;
 
         function showMessage(msg, type) {
             const el = document.getElementById('message');
@@ -768,8 +785,13 @@
             if (tab === 'pending') loadPendingPosts();
             else if (tab === 'approved') loadApprovedPosts();
             else if (tab === 'comments') loadComments();
-            else if (tab === 'users') loadPendingUsers();
-            else if (tab === 'approved-users') loadApprovedUsers();
+            else if (tab === 'users') {
+                loadPendingUsers();
+                loadApprovedUsers();
+            }
+            else if (tab === 'subscribers') loadSubscribers();
+            else if (tab === 'coadmins') loadCoAdmins();
+            else if (tab === 'stats') loadStats();
         }
 
         function loadPendingPosts() {
@@ -883,7 +905,10 @@
                         document.getElementById('subscribersList').innerHTML = '<div class="empty-state">No subscribers yet</div>';
                         return;
                     }
-                    document.getElementById('subscribersList').innerHTML = subs.map(s => `
+                    
+                    let html = `<button class="btn" style="background: #2196F3; color: white; margin-bottom: 20px; cursor: pointer;" onclick="downloadSubscribers()">📥 Download CSV</button>`;
+                    
+                    html += subs.map(s => `
                         <div class="subscriber-item">
                             <div>
                                 <strong>${escapeHtml(s.email)}</strong>
@@ -892,6 +917,33 @@
                             </div>
                         </div>
                     `).join('');
+                    
+                    document.getElementById('subscribersList').innerHTML = html;
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function downloadSubscribers() {
+            fetch(`${API_BASE}/admin/subscribers`)
+                .then(r => r.json())
+                .then(subs => {
+                    if (!Array.isArray(subs) || subs.length === 0) {
+                        alert('No subscribers to download');
+                        return;
+                    }
+                    
+                    let csv = 'Email,Name,Subscribed Date\n';
+                    subs.forEach(s => {
+                        csv += `"${s.email}","${s.name || ''}","${new Date(s.subscribed_at).toLocaleDateString()}"\n`;
+                    });
+                    
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'subscribers_' + new Date().getTime() + '.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
                 })
                 .catch(err => console.error('Error:', err));
         }
@@ -1000,28 +1052,6 @@
                 .then(() => {
                     showMessage('✅ Comment deleted', 'success');
                     loadComments();
-                })
-                .catch(err => showMessage('❌ Error', 'error'));
-        }
-
-        function approveUser(id) {
-            if (!confirm('Approve this user?')) return;
-            fetch(`${API_BASE}/admin/users/${id}/approve`, { method: 'POST' })
-                .then(r => r.json())
-                .then(() => {
-                    showMessage('✅ User approved', 'success');
-                    loadUsers();
-                })
-                .catch(err => showMessage('❌ Error', 'error'));
-        }
-
-        function deleteUser(id) {
-            if (!confirm('Reject this user?')) return;
-            fetch(`${API_BASE}/admin/users/${id}`, { method: 'DELETE' })
-                .then(r => r.json())
-                .then(() => {
-                    showMessage('✅ User rejected', 'success');
-                    loadUsers();
                 })
                 .catch(err => showMessage('❌ Error', 'error'));
         }
@@ -1159,6 +1189,29 @@ async function loadApprovedUsers() {
     }
 }
 
+        <!-- Password Reset Modal -->
+        <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h2>🔑 Reset User Password</h2>
+        <div class="form-group">
+            <label>User: <strong id="modalUsername"></strong></label>
+        </div>
+        <div class="form-group">
+            <label for="newPassword">New Password:</label>
+            <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
+        </div>
+        <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
+            <strong>New Password:</strong>
+            <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
+            <small style="color: #666;">⚠️ Share this with the user securely!</small>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
+            <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 async function approveUser(userId) {
     if (!confirm('Approve this user?')) return;
     try {
@@ -1223,27 +1276,5 @@ async function submitPasswordReset() {
     }
 }
     </script>
-        <!-- Password Reset Modal -->
-    <div id="resetModal" class="modal">
-        <div class="modal-content">
-            <h2>🔑 Reset User Password</h2>
-            <div class="form-group">
-                <label>User: <strong id="modalUsername"></strong></label>
-            </div>
-            <div class="form-group">
-                <label for="newPassword">New Password:</label>
-                <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
-            </div>
-            <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
-                <strong>New Password:</strong>
-                <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
-                <small style="color: #666;">⚠️ Share this with the user securely!</small>
-            </div>
-            <div class="modal-buttons">
-                <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
-                <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
