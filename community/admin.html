@@ -722,8 +722,18 @@
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
                     showMessage('✅ Login successful!', 'success');
+
+                        // Load all tab data
+                    loadPendingUsers();
+                    loadApprovedUsers();
+                    loadPendingPosts();
+                    loadApprovedPosts();
+                    loadComments();
+
                     loadDashboard();
                     setInterval(loadDashboard, 30000);
+
+                    
                 } else {
                     showMessage('❌ ' + (data.error || 'Login failed'), 'error');
                 }
@@ -1131,7 +1141,6 @@ async function loadPendingUsers() {
         console.error('Error:', error);
     }
 }
-
 async function loadApprovedUsers() {
     try {
         const response = await fetch(`${API_BASE}/admin/users/approved`);
@@ -1153,36 +1162,37 @@ async function loadApprovedUsers() {
                 <div class="user-actions">
                     <button class="btn-reset" onclick="openResetModal(${user.id}, '${user.username}')">🔑 Reset Password</button>
                 </div>
-            
-               <!-- Password Reset Modal -->
-                <div id="resetModal" class="modal">
-                <div class="modal-content">
-                      <h2>🔑 Reset User Password</h2>
-                <div class="form-group">
-                    <label>User: <strong id="modalUsername"></strong></label>
-                </div>
-                <div class="form-group">
-                    <label for="newPassword">New Password:</label>
-                    <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
-                </div>
-                  <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
-                    <strong>New Password:</strong>
-                  <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
-                    <small style="color: #666;">⚠️ Share this with the user securely!</small>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
-                    <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
-                  </div>
-                </div>
-                </div> 
             </div>
         `).join('');
+        
         container.innerHTML = html;
     } catch (error) {
         console.error('Error:', error);
     }
 }
+
+        <!-- Password Reset Modal -->
+<div id="resetModal" class="modal">
+    <div class="modal-content">
+        <h2>🔑 Reset User Password</h2>
+        <div class="form-group">
+            <label>User: <strong id="modalUsername"></strong></label>
+        </div>
+        <div class="form-group">
+            <label for="newPassword">New Password:</label>
+            <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
+        </div>
+        <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
+            <strong>New Password:</strong>
+            <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
+            <small style="color: #666;">⚠️ Share this with the user securely!</small>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
+            <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+        </div>
+    </div>
+</div>
 
 async function approveUser(userId) {
     if (!confirm('Approve this user?')) return;
