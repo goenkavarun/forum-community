@@ -766,6 +766,8 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tab).classList.add('active');
             event.target.classList.add('active');
+            else if (tabName === 'users') loadPendingUsers();
+            else if (tabName === 'approved-users') loadApprovedUsers();
         }
 
         function loadPendingPosts() {
