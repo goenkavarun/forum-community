@@ -1190,7 +1190,8 @@ async function loadApprovedUsers() {
 }
 
         <!-- Password Reset Modal -->
-        <div id="resetModal" class="modal">
+<script>
+            <div id="resetModal" class="modal">
         <div class="modal-content">
             <h2>🔑 Reset User Password</h2>
         <div class="form-group">
@@ -1211,8 +1212,8 @@ async function loadApprovedUsers() {
         </div>
     </div>
 </div>
-
-async function approveUser(userId) {
+            </script>
+    async function approveUser(userId) {
     if (!confirm('Approve this user?')) return;
     try {
         const response = await fetch(`${API_BASE}/admin/users/${userId}/approve`, { method: 'POST' });
