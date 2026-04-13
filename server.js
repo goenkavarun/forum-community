@@ -730,32 +730,33 @@ app.get('/api/admin/co-admins', (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 app.get('/api/search', (req, res) => {
-    const { q } = req.query;
-
-    if (!q || q.length < 2) {
+    const query = req.query.q || '';
+    
+    if (!query.trim()) {
         return res.json([]);
     }
 
-    const searchTerm = `%${q}%`;
-
+    const searchTerm = `%${query}%`;
+    
     db.all(
-        `SELECT p.*, 'post' as type FROM posts p
-         WHERE p.status = 'approved' AND (p.title LIKE ? OR p.description LIKE ? OR p.tags LIKE ?)
-         UNION
-         SELECT c.id, c.post_id, c.content as description, c.author_name as title, c.author_email, null, null, c.status, 0, 0, c.created_at, 'comment' as type
-         FROM comments c
-         WHERE c.status = 'approved' AND c.content LIKE ?
+        `SELECT * FROM posts 
+         WHERE status = 'approved' AND (
+             title LIKE ? OR 
+             description LIKE ? OR 
+             category LIKE ? OR 
+             tags LIKE ?
+         )
          ORDER BY created_at DESC`,
         [searchTerm, searchTerm, searchTerm, searchTerm],
-        (err, results) => {
+        (err, posts) => {
             if (err) {
+                console.error('Search error:', err);
                 return res.status(500).json({ error: 'Search failed' });
             }
-            res.json(results || []);
+            res.json(posts || []);
         }
     );
 });
-
 // ═══════════════════════════════════════════════════════════
 // NEWSLETTER ENDPOINTS
 // ═══════════════════════════════════════════════════════════
