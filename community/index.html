@@ -580,14 +580,14 @@
                     <div class="login-prompt">
                         <h3>🔐 Login Required</h3>
                         <p>You must login to submit posts</p>
-                        <a href="/community/login.html">👉 Login Now</a>
+                        <a href="/login.html">👉 Login Now</a>
                     </div>
                 `;
             }
         }
 
         function handleUserAuth() {
-            window.location.href = '/community/login.html';
+            window.location.href = '/login.html';
         }
 
         function handleLogout() {
@@ -662,7 +662,7 @@
 
             if (!userToken || !userId) {
                 alert('⚠️ You must login to post!');
-                window.location.href = '/community/login.html';
+                window.location.href = '/login.html';
                 return;
             }
 
