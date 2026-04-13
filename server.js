@@ -325,42 +325,52 @@ app.post('/api/auth/login', (req, res) => {
 // Google OAuth callback
 app.post('/api/auth/google', (req, res) => {
     const { googleId, email, name } = req.body;
-
+    
+    if (!googleId || !email) {
+        return res.status(400).json({ error: 'Missing googleId or email' });
+    }
+    
     db.get(
         `SELECT * FROM users WHERE google_id = ?`,
         [googleId],
         (err, user) => {
             if (err) {
+                console.error('Google auth error:', err);
                 return res.status(500).json({ error: 'Auth failed' });
             }
-
+            
             if (user) {
-                const token = generateToken();
+                // Existing user - login
+                const token = generateToken(user.id);  // ← FIX: Pass user.id
                 return res.json({
                     token: token,
                     userId: user.id,
                     username: user.username,
                     email: user.email,
-                    isNewUser: false
+                    isNewUser: false,
+                    message: 'Login successful'
                 });
             }
-
+            
+            // New user - create account (PENDING approval)
             db.run(
                 `INSERT INTO users (username, email, google_id, is_verified, is_approved)
-                 VALUES (?, ?, ?, 1, 1)`,
+                 VALUES (?, ?, ?, 1, 0)`,  // ← is_approved = 0 (pending)
                 [name || email.split('@')[0], email, googleId],
                 function(err) {
                     if (err) {
-                        return res.status(500).json({ error: 'Auth failed' });
+                        console.error('Google signup error:', err);
+                        return res.status(500).json({ error: 'Signup failed' });
                     }
-
-                    const token = generateToken();
+                    
+                    const token = generateToken(this.lastID);  // ← FIX: Pass user ID
                     res.json({
                         token: token,
                         userId: this.lastID,
                         username: name || email.split('@')[0],
                         email: email,
-                        isNewUser: true
+                        isNewUser: true,
+                        message: 'Account created, awaiting admin approval'
                     });
                 }
             );
