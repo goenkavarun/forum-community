@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - India Digital Marketing Forum</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #0B1B3E;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 5px rgba(255,107,0,0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #0B1B3E 0%, #FF6B00 100%);
+            color: white;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,0,0.3);
+        }
+
+        .btn-register {
+            background: #f0f0f0;
+            color: #0B1B3E;
+            border: 2px solid #0B1B3E;
+        }
+
+        .btn-register:hover {
+            background: #0B1B3E;
+            color: white;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 10px;
+            position: relative;
+        }
+
+        #googleSignInButton {
+            width: 100%;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .message {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #FF6B00;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #FF6B00;
+            font-weight: bold;
+        }
+
+        @media (max-width: 480px) {
+            .content {
+                padding: 25px;
+            }
+
+            .header h1 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Community Forum</h1>
+            <p>Login to share insights and connect</p>
+        </div>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <div id="loginForm">
+                <h2 style="color: #0B1B3E; margin-bottom: 20px; text-align: center;">Email Login</h2>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-login" onclick="loginUser()">🔐 Login</button>
+                    <button class="btn-register" onclick="toggleRegister()">📝 Register</button>
+                </div>
+
+                <div class="divider"><span>OR</span></div>
+
+                <div id="googleSignInButton"></div>
+
+                <div class="back-link">
+                    <a href="/community/">← Back to Community</a>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display: none;">
+                <h2 style="color: #0B1B3E; margin-bottom: 20px; text-align: center;">Create Account</h2>
+                
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" placeholder="your username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regEmail">Email Address</label>
+                    <input type="email" id="regEmail" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" required>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-login" onclick="registerUser()">✅ Register</button>
+                    <button class="btn-register" onclick="toggleRegister()">🔙 Back to Login</button>
+                </div>
+
+                <div class="back-link">
+                    <a href="/community/">← Back to Community</a>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">⏳ Processing...</div>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = '/api';
+    const GOOGLE_CLIENT_ID = '199736136937-ojo2f83vblvcshsl5cqa7e0s0qg6caqe.apps.googleusercontent.com';
+
+    // Initialize Google Sign-In
+    window.onload = function() {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleLogin
+        });
+
+        google.accounts.id.renderButton(
+            document.getElementById('googleSignInButton'),
+            {
+                theme: 'outline',
+                size: 'large'
+            }
+        );
+    };
+
+    function showMessage(msg, type) {
+        const el = document.getElementById('message');
+        el.textContent = msg;
+        el.className = `message ${type}`;
+    }
+
+    function setLoading(show) {
+        document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+
+    function toggleRegister() {
+        document.getElementById('loginForm').style.display = 
+            document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('registerForm').style.display = 
+            document.getElementById('registerForm').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('message').className = 'message';
+    }
+
+    function registerUser() {
+        const username = document.getElementById('regUsername').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+
+        if (!username || !email || !password) {
+            showMessage('❌ All fields required', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            showMessage('❌ Password must be 6+ characters', 'error');
+            return;
+        }
+
+        setLoading(true);
+
+        fetch(API_BASE + '/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password, name: username })
+        })
+        .then(r => r.json())
+        .then(data => {
+            setLoading(false);
+            if (data.token) {
+                showMessage('✅ Account created! Logging in...', 'success');
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('username', data.username);
+                setTimeout(() => {
+                    window.location.href = '/community/';
+                }, 1500);
+            } else {
+                showMessage('❌ ' + (data.error || 'Registration failed'), 'error');
+            }
+        })
+        .catch(err => {
+            setLoading(false);
+            showMessage('❌ Error: ' + err.message, 'error');
+        });
+    }
+
+    function loginUser() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+            showMessage('❌ Email and password required', 'error');
+            return;
+        }
+
+        setLoading(true);
+
+        fetch(API_BASE + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+        .then(r => r.json())
+        .then(data => {
+            setLoading(false);
+            if (data.token) {
+                showMessage('✅ Login successful! Redirecting...', 'success');
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('username', data.username);
+                setTimeout(() => {
+                    window.location.href = '/community/';
+                }, 1500);
+            } else {
+                showMessage('❌ ' + (data.error || 'Login failed'), 'error');
+            }
+        })
+        .catch(err => {
+            setLoading(false);
+            showMessage('❌ Error: ' + err.message, 'error');
+        });
+    }
+
+    function handleGoogleLogin(response) {
+        console.log('🔵 Google login response received');
+        setLoading(true);
+
+        // Decode JWT token
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const userData = JSON.parse(jsonPayload);
+
+        fetch(API_BASE + '/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: response.credential,
+                email: userData.email,
+                name: userData.name,
+                googleId: userData.sub
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            setLoading(false);
+            if (data.token) {
+                showMessage('✅ Google login successful!', 'success');
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('username', data.username);
+                setTimeout(() => {
+                    window.location.href = '/community/';
+                }, 1500);
+            } else {
+                showMessage('❌ ' + (data.error || 'Google login failed'), 'error');
+            }
+        })
+        .catch(err => {
+            setLoading(false);
+            showMessage('❌ Error: ' + err.message, 'error');
+        });
+    }
+</script>
+</body>
+</html>
