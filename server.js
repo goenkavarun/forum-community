@@ -1016,6 +1016,38 @@ app.get('/api/admin/comments', (req, res) => {
         }
     );
 });
+// ═══════════════════════════════════════════════════════════
+// SEARCH ENDPOINT (FIX #4)
+// ═══════════════════════════════════════════════════════════
+
+app.get('/api/search', (req, res) => {
+    const query = req.query.q || '';
+    
+    if (!query.trim()) {
+        return res.json([]);
+    }
+
+    const searchTerm = `%${query}%`;
+    
+    db.all(
+        `SELECT * FROM posts 
+         WHERE status = 'approved' AND (
+             title LIKE ? OR 
+             description LIKE ? OR 
+             category LIKE ? OR 
+             tags LIKE ?
+         )
+         ORDER BY created_at DESC`,
+        [searchTerm, searchTerm, searchTerm, searchTerm],
+        (err, posts) => {
+            if (err) {
+                console.error('Search error:', err);
+                return res.status(500).json({ error: 'Search failed' });
+            }
+            res.json(posts || []);
+        }
+    );
+});
 
 app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
