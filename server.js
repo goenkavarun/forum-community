@@ -239,7 +239,7 @@ app.post('/api/auth/signup', (req, res) => {
 
     db.run(
         `INSERT INTO users (username, email, password_hash, verification_token, is_verified, is_approved)
-         VALUES (?, ?, ?, ?, 1, 1)`,
+         VALUES (?, ?, ?, ?, 1, 0)`,
         [username, email, passwordHash, verificationToken],
         function(err) {
             if (err) {
