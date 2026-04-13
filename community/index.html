@@ -479,12 +479,12 @@
         <div class="forum-section">
             <h2 class="section-title">✏️ Share Your Post</h2>
             
-            <div id="postForm">
-                <form onsubmit="submitPost(event)">
-                    <div class="form-group">
-                        <label for="title">Post Title *</label>
-                        <input type="text" id="title" placeholder="What would you like to discuss?" required>
-                    </div>
+            <div id="postFormContainer">
+                    <form id="postForm" onsubmit="submitPost(event)">
+                        <div class="form-group">
+                            <label for="title">Post Title *</label>
+                            <input type="text" id="title" placeholder="What would you like to discuss?" required>
+                        </div>
 
                     <div class="form-group">
                         <label for="author-name">Your Name *</label>
