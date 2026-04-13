@@ -579,21 +579,9 @@
             <div id="pending" class="tab-content active">
                 <div class="posts-grid" id="pendingPosts">
                     <div class="empty-state">Loading pending posts...</div>
-                </div
-                        <div id="users" class="tab-content">
-                            <h2>👥 Pending Users - Approval Required</h2>
-                        <div class="success-message" id="pendingSuccess"></div>
-                        <div id="pendingUsers"></div>
                 </div>
-
-<div id="approved" class="tab-content">
-    <h2>✅ Approved Users - Password Reset</h2>
-    <div class="success-message" id="approvedSuccess"></div>
-    <div id="approvedUsers"></div>
-</div>    
-            </div>
-
-            <!-- Approved Posts -->
+        
+                <!-- Approved Posts -->
             <div id="approved" class="tab-content">
                 <div class="posts-grid" id="approvedPosts">
                     <div class="empty-state">Loading approved posts...</div>
@@ -1171,30 +1159,6 @@ async function loadApprovedUsers() {
     }
 }
 
-    <script>
-        <div id="resetModal" class="modal">
-        <div class="modal-content">
-            <h2>🔑 Reset User Password</h2>
-        <div class="form-group">
-            <label>User: <strong id="modalUsername"></strong></label>
-        </div>
-        <div class="form-group">
-            <label for="newPassword">New Password:</label>
-            <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
-        </div>
-        <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
-            <strong>New Password:</strong>
-            <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
-            <small style="color: #666;">⚠️ Share this with the user securely!</small>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
-            <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
-        </div>
-        
-    </div>
-</div>
-</script>
 async function approveUser(userId) {
     if (!confirm('Approve this user?')) return;
     try {
@@ -1259,5 +1223,27 @@ async function submitPasswordReset() {
     }
 }
     </script>
+        <!-- Password Reset Modal -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h2>🔑 Reset User Password</h2>
+            <div class="form-group">
+                <label>User: <strong id="modalUsername"></strong></label>
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
+            </div>
+            <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
+                <strong>New Password:</strong>
+                <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
+                <small style="color: #666;">⚠️ Share this with the user securely!</small>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
+                <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
