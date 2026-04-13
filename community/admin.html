@@ -392,6 +392,149 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+
+
+
+
+            .user-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9f9f9;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-info strong {
+    display: block;
+    font-size: 1.1em;
+    color: #0B1B3E;
+    margin-bottom: 5px;
+}
+
+.user-info p {
+    color: #666;
+    font-size: 0.9em;
+    margin: 3px 0;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-reset {
+    background: #2196F3;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-reset:hover {
+    background: #0b7dda;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.modal-content h2 {
+    color: #0B1B3E;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin: 15px 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #0B1B3E;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    flex: 1;
+}
+
+.btn-submit {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #45a049;
+}
+
+.btn-cancel {
+    background: #999;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #777;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+    display: none;
+}
+
+.success-message.active {
+    display: block;
+}
         }
     </style>
 </head>
@@ -436,7 +579,18 @@
             <div id="pending" class="tab-content active">
                 <div class="posts-grid" id="pendingPosts">
                     <div class="empty-state">Loading pending posts...</div>
+                </div
+                        <div id="users" class="tab-content">
+                            <h2>👥 Pending Users - Approval Required</h2>
+                        <div class="success-message" id="pendingSuccess"></div>
+                        <div id="pendingUsers"></div>
                 </div>
+
+<div id="approved" class="tab-content">
+    <h2>✅ Approved Users - Password Reset</h2>
+    <div class="success-message" id="approvedSuccess"></div>
+    <div id="approvedUsers"></div>
+</div>    
             </div>
 
             <!-- Approved Posts -->
@@ -993,6 +1147,29 @@ async function loadApprovedUsers() {
                 <div class="user-actions">
                     <button class="btn-reset" onclick="openResetModal(${user.id}, '${user.username}')">🔑 Reset Password</button>
                 </div>
+            
+               <!-- Password Reset Modal -->
+                <div id="resetModal" class="modal">
+                <div class="modal-content">
+                      <h2>🔑 Reset User Password</h2>
+                <div class="form-group">
+                    <label>User: <strong id="modalUsername"></strong></label>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password:</label>
+                    <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
+                </div>
+                  <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
+                    <strong>New Password:</strong>
+                  <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
+                    <small style="color: #666;">⚠️ Share this with the user securely!</small>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
+                    <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+                  </div>
+                </div>
+                </div> 
             </div>
         `).join('');
         container.innerHTML = html;
