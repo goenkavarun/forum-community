@@ -277,21 +277,34 @@
 
         // Initialize Google Sign-In
         window.onload = function() {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleLogin
-            });
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleLogin,
+        auto_select: false,
+        ux_mode: 'popup',
+        allowed_parent_origin: window.location.origin
+    });
 
-            google.accounts.id.renderButton(
-                document.getElementById('googleSignInButton'),
-                {
-                    theme: 'outline',
-                    size: 'large',
-                    width: '100%'
-                }
-             );
-        };
+    google.accounts.id.renderButton(
+        document.getElementById('googleSignInButton'),
+        {
+            theme: 'outline',
+            size: 'large',
+            width: '100%'
+        }
+    );
+};
 
+Deploy:
+
+Edit /community/login.html
+Add origin: window.location.origin to initialization
+Save & push to GitHub
+Wait 60 seconds
+Clear cache & test Google login ✅
+
+
+That's it! This tells Google Sign-In to accept requests from any path on your authorized domain! 🚀
         function showMessage(msg, type) {
             const el = document.getElementById('message');
             el.textContent = msg;
