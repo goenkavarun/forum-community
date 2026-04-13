@@ -766,8 +766,12 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tab).classList.add('active');
             event.target.classList.add('active');
-            else if (tabName === 'users') loadPendingUsers();
-            else if (tabName === 'approved-users') loadApprovedUsers();
+
+            if (tab === 'pending') loadPendingPosts();
+            else if (tab === 'approved') loadApprovedPosts();
+            else if (tab === 'comments') loadComments();
+            else if (tab === 'users') loadPendingUsers();
+            else if (tab === 'approved-users') loadApprovedUsers();
         }
 
         function loadPendingPosts() {
