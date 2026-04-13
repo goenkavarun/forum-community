@@ -879,46 +879,52 @@
         }
 
         function handleSearch() {
-            const query = document.getElementById('searchInput').value;
-            const category = document.getElementById('categoryFilter').value;
+    const query = document.getElementById('searchInput').value.trim();
+    const category = document.getElementById('categoryFilter').value;
 
-            if (!query && !category) {
-                loadPosts();
-                return;
-            }
+    if (!query && !category) {
+        loadPosts();
+        return;
+    }
 
-            fetch(API_BASE + '/search?q=' + encodeURIComponent(query))
-                .then(response => response.json())
-                .then(results => {
-                    let filtered = results;
-                    if (category) {
-                        filtered = results.filter(r => r.category === category);
-                    }
+    if (query) {
+        fetch(API_BASE + '/search?q=' + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(results => {
+                let filtered = results;
+                if (category) {
+                    filtered = results.filter(r => r.category === category);
+                }
 
-                    const container = document.getElementById('postsContainer');
-                    if (filtered.length === 0) {
-                        container.innerHTML = '<div class="empty-state">No results found</div>';
-                        return;
-                    }
+                const container = document.getElementById('postsContainer');
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No results found for "' + escapeHtml(query) + '"</div>';
+                    return;
+                }
 
-                    let html = filtered.map(post => `
-                        <div class="post-card">
-                            <div class="post-title">${escapeHtml(post.title)}</div>
-                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong></div>
-                            <span class="post-category">${escapeHtml(post.category)}</span>
-                            <div class="post-description">${escapeHtml(post.description)}</div>
-                            ${post.image_url ? '<img src="' + post.image_url + '" alt="Post image" class="post-image">' : ''}
-                            <div class="post-actions">
-                                <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
-                            </div>
+                let html = filtered.map(post => `
+                    <div class="post-card">
+                        <div class="post-title" onclick="toggleComments(${post.id})">${escapeHtml(post.title)}</div>
+                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> • ${new Date(post.created_at).toLocaleDateString()}</div>
+                        <span class="post-category">${escapeHtml(post.category)}</span>
+                        <div class="post-description">${escapeHtml(post.description)}</div>
+                        ${post.image_url ? '<img src="' + post.image_url + '" alt="Post image" class="post-image">' : ''}
+                        <div class="post-actions">
+                            <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
                         </div>
-                    `).join('');
+                    </div>
+                `).join('');
 
-                    container.innerHTML = html;
-                })
-                .catch(err => console.error('Search error:', err));
-        }
-
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Search error:', err);
+                showMessage('❌ Search failed', 'error');
+            });
+    } else {
+        loadPosts();
+    }
+}
         function resetSearch() {
             document.getElementById('searchInput').value = '';
             document.getElementById('categoryFilter').value = '';
