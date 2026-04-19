@@ -579,19 +579,8 @@
             <div id="pending" class="tab-content active">
                 <div class="posts-grid" id="pendingPosts">
                     <div class="empty-state">Loading pending posts...</div>
-                </div
-                        <div id="users" class="tab-content">
-                            <h2>👥 Pending Users - Approval Required</h2>
-                        <div class="success-message" id="pendingSuccess"></div>
-                        <div id="pendingUsers"></div>
                 </div>
-
-<div id="approved" class="tab-content">
-    <h2>✅ Approved Users - Password Reset</h2>
-    <div class="success-message" id="approvedSuccess"></div>
-    <div id="approvedUsers"></div>
-</div>    
-            </div>
+                        
 
             <!-- Approved Posts -->
             <div id="approved" class="tab-content">
@@ -709,7 +698,30 @@
             el.className = `message ${type}`;
             setTimeout(() => { el.className = 'message'; }, 4000);
         }
+              <!-- Password Reset Modal -->
+ <div id="resetModal" class="modal">
+     <div class="modal-content">
+            <h2>🔑 Reset User Password</h2>
+              <div class="form-group">
+                <label>User: <strong id="modalUsername"></strong></label>
+              </div>
+             <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
+             </div>
+             <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
+                <strong>New Password:</strong>
+                <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
+                <small style="color: #666;">⚠️ Share this with the user securely!</small>
+             </div>
+             <div class="modal-buttons">
+                <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
+                <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+             </div>
+    </div>
+</div>
 
+        
         function adminLogin(event) {
             event.preventDefault();
             const password = document.getElementById('password').value;
@@ -755,16 +767,16 @@
             showMessage('✅ Logged out', 'success');
         }
 
-        function loadDashboard() {
-            loadPendingPosts();
-            loadApprovedPosts();
-            loadComments();
-            loadUsers();
-            loadSubscribers();
-            loadCoAdmins();
-            loadStats();
-        }
-
+             function loadDashboard() {
+                 loadPendingPosts();
+                 loadApprovedPosts();
+                  loadComments();
+                  loadPendingUsers();    
+                  loadApprovedUsers();
+                  loadSubscribers();
+                  loadCoAdmins();
+                  loadStats();
+             }
         window.addEventListener('load', () => {
             if (adminToken) {
                 document.getElementById('loginSection').style.display = 'none';
@@ -872,31 +884,7 @@
                 .catch(err => console.error('Error:', err));
         }
 
-        function loadUsers() {
-            fetch(`${API_BASE}/admin/users/pending`)
-                .then(r => r.json())
-                .then(users => {
-                    if (!Array.isArray(users)) users = [];
-                    if (users.length === 0) {
-                        document.getElementById('usersList').innerHTML = '<div class="empty-state">✅ All users approved</div>';
-                        return;
-                    }
-                    document.getElementById('usersList').innerHTML = users.map(u => `
-                        <div class="user-card">
-                            <div class="user-info">
-                                <div class="user-name">${escapeHtml(u.username)}</div>
-                                <div class="user-email">${escapeHtml(u.email)}</div>
-                            </div>
-                            <div class="post-actions">
-                                <button class="btn btn-approve btn-small" onclick="approveUser(${u.id})">✅ Approve</button>
-                                <button class="btn btn-delete btn-small" onclick="deleteUser(${u.id})">❌ Reject</button>
-                            </div>
-                        </div>
-                    `).join('');
-                })
-                .catch(err => console.error('Error:', err));
-        }
-
+        
         function loadSubscribers() {
             fetch(`${API_BASE}/admin/subscribers`)
                 .then(r => r.json())
@@ -1191,35 +1179,13 @@ async function loadApprovedUsers() {
 
       
 
-    <!-- Password Reset Modal -->
- <div id="resetModal" class="modal">
-     <div class="modal-content">
-            <h2>🔑 Reset User Password</h2>
-              <div class="form-group">
-                <label>User: <strong id="modalUsername"></strong></label>
-              </div>
-             <div class="form-group">
-                <label for="newPassword">New Password:</label>
-                <input type="text" id="newPassword" placeholder="Enter new password (min 6 characters)">
-             </div>
-             <div id="newPasswordDisplay" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; display: none;">
-                <strong>New Password:</strong>
-                <div id="displayPassword" style="word-break: break-all; font-family: monospace; margin-top: 5px;"></div>
-                <small style="color: #666;">⚠️ Share this with the user securely!</small>
-             </div>
-             <div class="modal-buttons">
-                <button class="btn-submit" onclick="submitPasswordReset()">Reset Password</button>
-                <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
-             </div>
-    </div>
-</div>
-
+  
     async function approveUser(userId) {
     if (!confirm('Approve this user?')) return;
     try {
         const response = await fetch(`${API_BASE}/admin/users/${userId}/approve`, { method: 'POST' });
         if (response.ok) {
-            showMessage('pendingSuccess', '✅ User approved!');
+            showMessage('✅ User approved!', 'success');
             setTimeout(() => loadPendingUsers(), 1500);
         }
     } catch (error) {
@@ -1232,7 +1198,7 @@ async function rejectUser(userId) {
     try {
         const response = await fetch(`${API_BASE}/admin/users/${userId}`, { method: 'DELETE' });
         if (response.ok) {
-            showMessage('pendingSuccess', '✅ User rejected!');
+            showMessage('✅ User rejected!', 'success');
             setTimeout(() => loadPendingUsers(), 1500);
         }
     } catch (error) {
