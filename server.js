@@ -54,7 +54,12 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 // ═══════════════════════════════════════════════════════════
 
 app.use(express.static(path.join(__dirname)));
+
+// Serve uploaded images — primary path
 app.use('/data/uploads', express.static('/home/u277837837/domains/indiadigitalmarketingforum.org/data/uploads'));
+
+// Fallback: also serve on /uploads/ for any old posts that used the old URL
+app.use('/uploads', express.static('/home/u277837837/domains/indiadigitalmarketingforum.org/data/uploads'));
 
 // ═══════════════════════════════════════════════════════════
 // RATE LIMITING
@@ -411,26 +416,26 @@ app.get('/api/posts/:id', (req, res) => {
     );
 });
 
-// Submit new post - ULTRA SIMPLE
+// Submit new post
 app.post('/api/posts', (req, res) => {
     console.log('📝 Post received:', req.body);
     
-    const { title, author_name, author_email, category, description } = req.body;
+    const { title, author_name, author_email, category, description, image_url, tags, user_id } = req.body;
     
     if (!title || !author_name || !author_email || !category || !description) {
         console.error('❌ Missing fields');
         return res.status(400).json({ error: 'All fields required' });
     }
 
-    const sql = `INSERT INTO posts (title, author_name, author_email, category, description, status) 
-                 VALUES (?, ?, ?, ?, ?, 'pending')`;
+    const sql = `INSERT INTO posts (title, author_name, author_email, category, description, image_url, tags, user_id, status) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`;
     
-    db.run(sql, [title, author_name, author_email, category, description], function(err) {
+    db.run(sql, [title, author_name, author_email, category, description, image_url || null, tags || null, user_id || null], function(err) {
         if (err) {
             console.error('❌ DB Error:', err.message);
             return res.status(500).json({ error: err.message });
         }
-        console.log('✅ Post inserted with ID:', this.lastID);
+        console.log('✅ Post inserted with ID:', this.lastID, 'image:', image_url || 'none');
         res.json({ message: 'Post submitted!', postId: this.lastID });
     });
 });
