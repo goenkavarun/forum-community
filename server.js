@@ -708,6 +708,41 @@ app.post('/api/admin/users/:id/approve', (req, res) => {
     );
 });
 
+// Get approved users  ← THIS IS NEW
+app.get('/api/admin/users/approved', (req, res) => {
+    db.all(
+        `SELECT id, username, email, created_at FROM users 
+         WHERE is_approved = 1
+         ORDER BY created_at DESC`,
+        (err, users) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch approved users' });
+            }
+            res.json(users || []);
+        }
+    );
+});
+
+// Reset user password  ← THIS IS NEW
+app.post('/api/admin/users/:id/reset-password', (req, res) => {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256').update(newPassword).digest('hex');
+    db.run(
+        `UPDATE users SET password_hash = ? WHERE id = ?`,
+        [hash, req.params.id],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to reset password' });
+            }
+            res.json({ success: true, newPassword: newPassword });
+        }
+    );
+});
+
 // Reject user
 app.delete('/api/admin/users/:id', (req, res) => {
     db.run(
@@ -721,7 +756,6 @@ app.delete('/api/admin/users/:id', (req, res) => {
         }
     );
 });
-
 // Get co-admins
 app.get('/api/admin/co-admins', (req, res) => {
     db.all(
