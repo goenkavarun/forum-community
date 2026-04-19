@@ -572,6 +572,7 @@
 }
         }
     </style>
+</head>
 <body>
     <!-- LOGIN SECTION -->
     <div id="loginSection">
@@ -748,39 +749,56 @@
         let adminToken = localStorage.getItem('adminToken');
         let currentResetUserId = null;
 
-        // FIX: showMessage now targets correct element based on which panel is visible
-        function showMessage(msg, type) {
-            const id = document.getElementById('adminPanel').style.display !== 'none'
-                       ? 'adminMessage' : 'loginMessage';
-            const el = document.getElementById(id);
-            el.textContent = msg;
-            el.className = `message ${type}`;
-            setTimeout(() => { el.className = 'message'; }, 4000);
+        /* ── helpers ─────────────────────────────────────────── */
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            var map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
+            return String(text).replace(/[&<>"']/g, function(m){ return map[m]; });
+        }
+        function escapeXml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        function _triggerDownload(blob, filename) {
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            window.URL.revokeObjectURL(url);
         }
 
+        /* ── message helper ──────────────────────────────────── */
+        function showMessage(msg, type) {
+            var panelVisible = document.getElementById('adminPanel').style.display !== 'none';
+            var el = document.getElementById(panelVisible ? 'adminMessage' : 'loginMessage');
+            el.textContent = msg;
+            el.className = 'message ' + type;
+            setTimeout(function(){ el.className = 'message'; }, 4000);
+        }
+
+        /* ── auth ────────────────────────────────────────────── */
         function adminLogin(event) {
             event.preventDefault();
-            const password = document.getElementById('password').value;
+            var password = document.getElementById('password').value;
             fetch(API_BASE + '/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: password })
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r){ return r.json(); })
+            .then(function(data) {
                 if (data.token) {
                     adminToken = data.token;
                     localStorage.setItem('adminToken', adminToken);
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
-                    showMessage('✅ Login successful!', 'success');
+                    showMessage('Login successful!', 'success');
                     loadDashboard();
                     setInterval(loadDashboard, 30000);
                 } else {
-                    showMessage('❌ ' + (data.error || 'Login failed'), 'error');
+                    showMessage((data.error || 'Login failed'), 'error');
                 }
             })
-            .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+            .catch(function(err){ showMessage('Error: ' + err.message, 'error'); });
         }
 
         function adminLogout() {
@@ -791,7 +809,19 @@
             document.getElementById('password').value = '';
         }
 
-        // FIX: loadDashboard uses correct function names (no loadUsers)
+        /* ── on load ─────────────────────────────────────────── */
+        window.addEventListener('load', function() {
+            if (adminToken) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadDashboard();
+            } else {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'none';
+            }
+        });
+
+        /* ── dashboard & tabs ────────────────────────────────── */
         function loadDashboard() {
             loadPendingPosts();
             loadApprovedPosts();
@@ -803,231 +833,227 @@
             loadStats();
         }
 
-        window.addEventListener('load', () => {
-            if (adminToken) {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                loadDashboard();
-            } else {
-                document.getElementById('loginSection').style.display = 'block';
-                document.getElementById('adminPanel').style.display = 'none';
-            }
-        });
-
-        // FIX: switchTab now accepts event parameter explicitly — no reliance on global event
         function switchTab(tab, evt) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+            document.querySelectorAll('.tab-btn').forEach(function(el){ el.classList.remove('active'); });
             document.getElementById(tab).classList.add('active');
             if (evt && evt.target) evt.target.classList.add('active');
-
-            if (tab === 'pending') loadPendingPosts();
-            else if (tab === 'approved') loadApprovedPosts();
-            else if (tab === 'comments') loadComments();
-            else if (tab === 'users') { loadPendingUsers(); loadApprovedUsers(); }
+            if      (tab === 'pending')     loadPendingPosts();
+            else if (tab === 'approved')    loadApprovedPosts();
+            else if (tab === 'comments')    loadComments();
+            else if (tab === 'users')       { loadPendingUsers(); loadApprovedUsers(); }
             else if (tab === 'subscribers') loadSubscribers();
-            else if (tab === 'coadmins') loadCoAdmins();
-            else if (tab === 'stats') loadStats();
+            else if (tab === 'coadmins')    loadCoAdmins();
+            else if (tab === 'stats')       loadStats();
         }
 
+        /* ── pending posts ───────────────────────────────────── */
         function loadPendingPosts() {
             fetch(API_BASE + '/admin/posts/pending')
-                .then(r => r.json())
-                .then(posts => {
-                    if (!Array.isArray(posts)) posts = [];
-                    if (posts.length === 0) {
-                        document.getElementById('pendingPosts').innerHTML = '<div class="empty-state">&#9989; No pending posts</div>';
-                        return;
-                    }
-                    document.getElementById('pendingPosts').innerHTML = posts.map(function(post) {
-                        var imgHtml = post.image_url ? '<img src="' + escapeHtml(post.image_url) + '" class="post-image">' : '';
-                        return '<div class="post-card">'
-                            + '<div class="post-title">' + escapeHtml(post.title) + '</div>'
-                            + '<div class="post-meta">By <strong>' + escapeHtml(post.author_name) + '</strong> &nbsp;|&nbsp; ' + new Date(post.created_at).toLocaleDateString() + '</div>'
-                            + '<span class="post-category">' + escapeHtml(post.category) + '</span>'
-                            + '<div class="post-description">' + escapeHtml(post.description) + '</div>'
-                            + imgHtml
-                            + '<div class="post-actions">'
-                            + '<button class="btn btn-approve" onclick="approvePost(' + post.id + ')">&#9989; Approve</button>'
-                            + '<button class="btn btn-delete" onclick="rejectPost(' + post.id + ')">&#128465;&#65039; Reject</button>'
-                            + '</div></div>';
-                    }).join('');
-                })
-                .catch(function(err) { console.error('Error loading pending posts:', err); });
+            .then(function(r){ return r.json(); })
+            .then(function(posts) {
+                if (!Array.isArray(posts)) posts = [];
+                var el = document.getElementById('pendingPosts');
+                if (posts.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No pending posts</div>';
+                    return;
+                }
+                el.innerHTML = posts.map(function(post) {
+                    var img = post.image_url ? '<img src="' + escapeHtml(post.image_url) + '" class="post-image">' : '';
+                    return '<div class="post-card">'
+                        + '<div class="post-title">' + escapeHtml(post.title) + '</div>'
+                        + '<div class="post-meta">By <strong>' + escapeHtml(post.author_name) + '</strong> | ' + new Date(post.created_at).toLocaleDateString() + '</div>'
+                        + '<span class="post-category">' + escapeHtml(post.category) + '</span>'
+                        + '<div class="post-description">' + escapeHtml(post.description) + '</div>'
+                        + img
+                        + '<div class="post-actions">'
+                        + '<button class="btn btn-approve" onclick="approvePost(' + post.id + ')">Approve</button>'
+                        + '<button class="btn btn-delete" onclick="rejectPost(' + post.id + ')">Reject</button>'
+                        + '</div></div>';
+                }).join('');
+            })
+            .catch(function(e){ console.error('loadPendingPosts:', e); });
         }
 
+        /* ── approved posts ──────────────────────────────────── */
         function loadApprovedPosts() {
             fetch(API_BASE + '/admin/posts/approved')
-                .then(r => r.json())
-                .then(posts => {
-                    if (!Array.isArray(posts)) posts = [];
-                    if (posts.length === 0) {
-                        document.getElementById('approvedPosts').innerHTML = '<div class="empty-state">No approved posts yet</div>';
-                        return;
-                    }
-                    document.getElementById('approvedPosts').innerHTML = posts.map(function(post) {
-                        var featuredBadge = post.featured ? '<span class="featured-badge">&#11088; FEATURED</span>' : '';
-                        var featuredBtnLabel = post.featured ? '&#11088; Unfeature' : '&#9734; Feature';
-                        var featuredVal = post.featured ? 0 : 1;
-                        var imgHtml = post.image_url ? '<img src="' + escapeHtml(post.image_url) + '" class="post-image">' : '';
-                        return '<div class="post-card">'
-                            + '<div class="post-title">' + escapeHtml(post.title) + ' ' + featuredBadge + '</div>'
-                            + '<div class="post-meta">By <strong>' + escapeHtml(post.author_name) + '</strong> &nbsp;|&nbsp; ' + new Date(post.created_at).toLocaleDateString() + '</div>'
-                            + '<span class="post-category">' + escapeHtml(post.category) + '</span>'
-                            + '<div class="post-description">' + escapeHtml(post.description) + '</div>'
-                            + imgHtml
-                            + '<div class="post-actions">'
-                            + '<button class="btn btn-featured btn-small" onclick="toggleFeatured(' + post.id + ',' + featuredVal + ')">' + featuredBtnLabel + '</button>'
-                            + '<button class="btn btn-delete btn-small" onclick="deleteApprovedPost(' + post.id + ')">&#128465;&#65039; Delete</button>'
-                            + '</div></div>';
-                    }).join('');
-                })
-                .catch(function(err) { console.error('Error loading approved posts:', err); });
+            .then(function(r){ return r.json(); })
+            .then(function(posts) {
+                if (!Array.isArray(posts)) posts = [];
+                var el = document.getElementById('approvedPosts');
+                if (posts.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No approved posts yet</div>';
+                    return;
+                }
+                el.innerHTML = posts.map(function(post) {
+                    var badge    = post.featured ? '<span class="featured-badge">FEATURED</span>' : '';
+                    var btnLabel = post.featured ? 'Unfeature' : 'Feature';
+                    var nextFeat = post.featured ? 0 : 1;
+                    var img      = post.image_url ? '<img src="' + escapeHtml(post.image_url) + '" class="post-image">' : '';
+                    return '<div class="post-card">'
+                        + '<div class="post-title">' + escapeHtml(post.title) + ' ' + badge + '</div>'
+                        + '<div class="post-meta">By <strong>' + escapeHtml(post.author_name) + '</strong> | ' + new Date(post.created_at).toLocaleDateString() + '</div>'
+                        + '<span class="post-category">' + escapeHtml(post.category) + '</span>'
+                        + '<div class="post-description">' + escapeHtml(post.description) + '</div>'
+                        + img
+                        + '<div class="post-actions">'
+                        + '<button class="btn btn-featured btn-small" onclick="toggleFeatured(' + post.id + ',' + nextFeat + ')">' + btnLabel + '</button>'
+                        + '<button class="btn btn-delete btn-small" onclick="deleteApprovedPost(' + post.id + ')">Delete</button>'
+                        + '</div></div>';
+                }).join('');
+            })
+            .catch(function(e){ console.error('loadApprovedPosts:', e); });
         }
 
+        /* ── comments ────────────────────────────────────────── */
         function loadComments() {
-            fetch(`${API_BASE}/admin/comments/pending`)
-                .then(r => r.json())
-                .then(comments => {
-                    if (!Array.isArray(comments)) comments = [];
-                    if (comments.length === 0) {
-                        document.getElementById('commentsList').innerHTML = '<div class="empty-state">✅ No pending comments</div>';
-                        return;
-                    }
-                    document.getElementById('commentsList').innerHTML = comments.map(c => `
-                        <div class="comment-card">
-                            <div class="comment-author">${escapeHtml(c.author_name)}</div>
-                            <div class="comment-content">${escapeHtml(c.content)}</div>
-                            <div class="comment-meta">Post: <strong>${escapeHtml(c.post_title)}</strong> | ${new Date(c.created_at).toLocaleDateString()}</div>
-                            <div class="post-actions" style="margin-top: 10px;">
-                                <button class="btn btn-approve btn-small" onclick="approveComment(${c.id})">✅ Approve</button>
-                                <button class="btn btn-delete btn-small" onclick="deleteComment(${c.id})">🗑️ Delete</button>
-                            </div>
-                        </div>
-                    `).join('');
-                })
-                .catch(err => console.error('Error loading comments:', err));
+            fetch(API_BASE + '/admin/comments/pending')
+            .then(function(r){ return r.json(); })
+            .then(function(comments) {
+                if (!Array.isArray(comments)) comments = [];
+                var el = document.getElementById('commentsList');
+                if (comments.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No pending comments</div>';
+                    return;
+                }
+                el.innerHTML = comments.map(function(c) {
+                    return '<div class="comment-card">'
+                        + '<div class="comment-author">' + escapeHtml(c.author_name) + '</div>'
+                        + '<div class="comment-content">' + escapeHtml(c.content) + '</div>'
+                        + '<div class="comment-meta">Post: <strong>' + escapeHtml(c.post_title) + '</strong> | ' + new Date(c.created_at).toLocaleDateString() + '</div>'
+                        + '<div class="post-actions" style="margin-top:10px;">'
+                        + '<button class="btn btn-approve btn-small" onclick="approveComment(' + c.id + ')">Approve</button>'
+                        + '<button class="btn btn-delete btn-small" onclick="deleteComment(' + c.id + ')">Delete</button>'
+                        + '</div></div>';
+                }).join('');
+            })
+            .catch(function(e){ console.error('loadComments:', e); });
         }
 
-        async function loadPendingUsers() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/users/pending`);
-                const users = await response.json();
-                const container = document.getElementById('pendingUsers');
-                if (!Array.isArray(users) || users.length === 0) {
-                    container.innerHTML = '<div class="empty-state">✅ No pending users</div>';
+        /* ── pending users ───────────────────────────────────── */
+        function loadPendingUsers() {
+            fetch(API_BASE + '/admin/users/pending')
+            .then(function(r){ return r.json(); })
+            .then(function(users) {
+                if (!Array.isArray(users)) users = [];
+                var el = document.getElementById('pendingUsers');
+                if (users.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No pending users</div>';
                     return;
                 }
-                container.innerHTML = users.map(user => `
-                    <div class="user-card">
-                        <div class="user-info">
-                            <strong>${escapeHtml(user.username)}</strong>
-                            <p>Email: ${escapeHtml(user.email)}</p>
-                            <p>Joined: ${new Date(user.created_at).toLocaleDateString()}</p>
-                        </div>
-                        <div class="user-actions">
-                            <button class="btn-approve btn" onclick="approveUser(${user.id})">✅ Approve</button>
-                            <button class="btn-delete btn" onclick="rejectUser(${user.id})">❌ Reject</button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading pending users:', error);
-            }
-        }
-
-        async function loadApprovedUsers() {
-            const container = document.getElementById('approvedUsers');
-            try {
-                const response = await fetch(API_BASE + '/admin/users/approved');
-                if (!response.ok) {
-                    container.innerHTML = '<div class="empty-state" style="color:#f44336;">&#10060; API error: ' + response.status + ' - endpoint /admin/users/approved may not exist in server.js</div>';
-                    return;
-                }
-                const users = await response.json();
-                if (!Array.isArray(users) || users.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No approved users yet</div>';
-                    return;
-                }
-                container.innerHTML = users.map(function(user) {
+                el.innerHTML = users.map(function(user) {
                     return '<div class="user-card">'
                         + '<div class="user-info">'
                         + '<strong>' + escapeHtml(user.username) + '</strong>'
-                        + '<p>&#128231; ' + escapeHtml(user.email) + '</p>'
-                        + '<p>&#128197; Joined: ' + new Date(user.created_at).toLocaleDateString() + '</p>'
-                        + '<p style="font-size:0.8em;color:#999;">&#128274; Password is hashed — use Reset to set a new one</p>'
+                        + '<p>' + escapeHtml(user.email) + '</p>'
+                        + '<p>Joined: ' + new Date(user.created_at).toLocaleDateString() + '</p>'
                         + '</div>'
                         + '<div class="user-actions">'
-                        + '<button class="btn-reset" onclick="openResetModal(' + user.id + ', '' + escapeHtml(user.username) + '')">&#128273; Reset Password</button>'
+                        + '<button class="btn btn-approve btn-small" onclick="approveUser(' + user.id + ')">Approve</button>'
+                        + '<button class="btn btn-delete btn-small" onclick="rejectUser(' + user.id + ')">Reject</button>'
                         + '</div></div>';
                 }).join('');
-            } catch (error) {
-                container.innerHTML = '<div class="empty-state" style="color:#f44336;">&#10060; Failed to load: ' + error.message + '</div>';
-                console.error('Error loading approved users:', error);
-            }
+            })
+            .catch(function(e){ console.error('loadPendingUsers:', e); });
         }
 
-        var _subscribersCache = [];
+        /* ── approved users ──────────────────────────────────── */
+        function loadApprovedUsers() {
+            var el = document.getElementById('approvedUsers');
+            fetch(API_BASE + '/admin/users/approved')
+            .then(function(r){
+                if (!r.ok) throw new Error('HTTP ' + r.status + ' — check /admin/users/approved exists in server.js');
+                return r.json();
+            })
+            .then(function(users) {
+                if (!Array.isArray(users)) users = [];
+                if (users.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No approved users yet</div>';
+                    return;
+                }
+                el.innerHTML = users.map(function(user) {
+                    /* NOTE: passwords are SHA256-hashed in DB — originals cannot be shown.
+                       Use "Reset Password" to set a new plain-text password for the user. */
+                    var safeUsername = escapeHtml(user.username).replace(/'/g, '&#39;');
+                    return '<div class="user-card">'
+                        + '<div class="user-info">'
+                        + '<strong>' + escapeHtml(user.username) + '</strong>'
+                        + '<p>' + escapeHtml(user.email) + '</p>'
+                        + '<p>Joined: ' + new Date(user.created_at).toLocaleDateString() + '</p>'
+                        + '</div>'
+                        + '<div class="user-actions">'
+                        + '<button class="btn-reset" onclick="openResetModal(' + user.id + ',\'' + safeUsername + '\')">Reset Password</button>'
+                        + '</div></div>';
+                }).join('');
+            })
+            .catch(function(e){
+                el.innerHTML = '<div class="empty-state" style="color:#f44336;">Error: ' + escapeHtml(e.message) + '</div>';
+            });
+        }
+
+        /* ── subscribers ─────────────────────────────────────── */
+        var _subCache = [];
 
         function loadSubscribers() {
             fetch(API_BASE + '/admin/subscribers')
-                .then(r => r.json())
-                .then(function(subs) {
-                    if (!Array.isArray(subs) || subs.length === 0) {
-                        document.getElementById('subscribersList').innerHTML = '<div class="empty-state">No subscribers yet</div>';
-                        return;
-                    }
-                    _subscribersCache = subs;
-                    var btnRow = '<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">'
-                        + '<button class="btn" style="background:#2196F3;color:white;" onclick="downloadSubscribersCSV()">&#128229; Download CSV</button>'
-                        + '<button class="btn" style="background:#1D6F42;color:white;" onclick="downloadSubscribersExcel()">&#128229; Download Excel</button>'
-                        + '<span style="align-self:center;color:#666;font-size:0.9em;">Total: <strong>' + subs.length + '</strong> subscribers</span>'
-                        + '</div>';
-                    var tableHtml = '<table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.1);">'
-                        + '<thead><tr style="background:#0B1B3E;color:white;">'
-                        + '<th style="padding:12px 15px;text-align:left;">#</th>'
-                        + '<th style="padding:12px 15px;text-align:left;">Email</th>'
-                        + '<th style="padding:12px 15px;text-align:left;">Name</th>'
-                        + '<th style="padding:12px 15px;text-align:left;">Subscribed On</th>'
-                        + '</tr></thead><tbody>';
-                    subs.forEach(function(s, i) {
-                        var rowBg = i % 2 === 0 ? '#fff' : '#f9f9f9';
-                        tableHtml += '<tr style="background:' + rowBg + ';border-bottom:1px solid #eee;">'
-                            + '<td style="padding:10px 15px;color:#999;">' + (i + 1) + '</td>'
-                            + '<td style="padding:10px 15px;font-weight:bold;">' + escapeHtml(s.email) + '</td>'
-                            + '<td style="padding:10px 15px;color:#555;">' + escapeHtml(s.name || '—') + '</td>'
-                            + '<td style="padding:10px 15px;color:#999;font-size:0.9em;">' + new Date(s.subscribed_at).toLocaleDateString() + '</td>'
-                            + '</tr>';
-                    });
-                    tableHtml += '</tbody></table>';
-                    document.getElementById('subscribersList').innerHTML = btnRow + tableHtml;
-                })
-                .catch(function(err) { console.error('Error loading subscribers:', err); });
+            .then(function(r){ return r.json(); })
+            .then(function(subs) {
+                var el = document.getElementById('subscribersList');
+                if (!Array.isArray(subs) || subs.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No subscribers yet</div>';
+                    return;
+                }
+                _subCache = subs;
+                var html = '<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">'
+                    + '<button class="btn" style="background:#2196F3;color:white;" onclick="downloadSubCSV()">Download CSV</button>'
+                    + '<button class="btn" style="background:#1D6F42;color:white;" onclick="downloadSubExcel()">Download Excel</button>'
+                    + '<span style="color:#666;font-size:0.9em;">Total: <strong>' + subs.length + '</strong></span>'
+                    + '</div>'
+                    + '<table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.1);">'
+                    + '<thead><tr style="background:#0B1B3E;color:white;">'
+                    + '<th style="padding:12px 15px;text-align:left;">#</th>'
+                    + '<th style="padding:12px 15px;text-align:left;">Email</th>'
+                    + '<th style="padding:12px 15px;text-align:left;">Name</th>'
+                    + '<th style="padding:12px 15px;text-align:left;">Date</th>'
+                    + '</tr></thead><tbody>';
+                subs.forEach(function(s, i) {
+                    html += '<tr style="background:' + (i%2===0?'#fff':'#f9f9f9') + ';border-bottom:1px solid #eee;">'
+                        + '<td style="padding:10px 15px;color:#999;">' + (i+1) + '</td>'
+                        + '<td style="padding:10px 15px;font-weight:bold;">' + escapeHtml(s.email) + '</td>'
+                        + '<td style="padding:10px 15px;color:#555;">' + escapeHtml(s.name || '') + '</td>'
+                        + '<td style="padding:10px 15px;color:#999;font-size:.9em;">' + new Date(s.subscribed_at).toLocaleDateString() + '</td>'
+                        + '</tr>';
+                });
+                html += '</tbody></table>';
+                el.innerHTML = html;
+            })
+            .catch(function(e){ console.error('loadSubscribers:', e); });
         }
 
-        function downloadSubscribersCSV() {
-            if (!_subscribersCache.length) { alert('No subscribers to download'); return; }
-            var csv = 'No,Email,Name,Subscribed Date\n';
-            _subscribersCache.forEach(function(s, i) {
-                csv += (i+1) + ',"' + s.email + '","' + (s.name || '') + '","' + new Date(s.subscribed_at).toLocaleDateString() + '"\n';
+        function downloadSubCSV() {
+            if (!_subCache.length) { alert('No subscribers to download'); return; }
+            var csv = 'No,Email,Name,Date\n';
+            _subCache.forEach(function(s, i) {
+                csv += (i+1) + ',"' + s.email + '","' + (s.name||'') + '","' + new Date(s.subscribed_at).toLocaleDateString() + '"\n';
             });
             _triggerDownload(new Blob([csv], {type:'text/csv'}), 'subscribers_' + Date.now() + '.csv');
         }
 
-        function downloadSubscribersExcel() {
-            if (!_subscribersCache.length) { alert('No subscribers to download'); return; }
+        function downloadSubExcel() {
+            if (!_subCache.length) { alert('No subscribers to download'); return; }
             var xml = '<?xml version="1.0"?>\n'
                 + '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n'
                 + '<Worksheet ss:Name="Subscribers"><Table>\n'
                 + '<Row><Cell><Data ss:Type="String">No</Data></Cell>'
                 + '<Cell><Data ss:Type="String">Email</Data></Cell>'
                 + '<Cell><Data ss:Type="String">Name</Data></Cell>'
-                + '<Cell><Data ss:Type="String">Subscribed Date</Data></Cell></Row>\n';
-            _subscribersCache.forEach(function(s, i) {
+                + '<Cell><Data ss:Type="String">Date</Data></Cell></Row>\n';
+            _subCache.forEach(function(s, i) {
                 xml += '<Row>'
                     + '<Cell><Data ss:Type="Number">' + (i+1) + '</Data></Cell>'
                     + '<Cell><Data ss:Type="String">' + escapeXml(s.email) + '</Data></Cell>'
-                    + '<Cell><Data ss:Type="String">' + escapeXml(s.name || '') + '</Data></Cell>'
+                    + '<Cell><Data ss:Type="String">' + escapeXml(s.name||'') + '</Data></Cell>'
                     + '<Cell><Data ss:Type="String">' + new Date(s.subscribed_at).toLocaleDateString() + '</Data></Cell>'
                     + '</Row>\n';
             });
@@ -1035,217 +1061,191 @@
             _triggerDownload(new Blob([xml], {type:'application/vnd.ms-excel'}), 'subscribers_' + Date.now() + '.xls');
         }
 
-        function escapeXml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-
-        function _triggerDownload(blob, filename) {
-            var url = window.URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url; a.download = filename; a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
+        /* ── co-admins ───────────────────────────────────────── */
         function loadCoAdmins() {
-            fetch(`${API_BASE}/admin/co-admins`)
-                .then(r => r.json())
-                .then(admins => {
-                    if (!Array.isArray(admins) || admins.length === 0) {
-                        document.getElementById('coAdminsList').innerHTML = '<div class="empty-state">No co-admins yet</div>';
-                        return;
-                    }
-                    document.getElementById('coAdminsList').innerHTML = admins.map(a => `
-                        <div class="co-admin-item">
-                            <div class="co-admin-info">
-                                <div style="font-weight: bold; color: #0B1B3E;">${escapeHtml(a.username)}</div>
-                                <div style="font-size: 0.9em; color: #999;">${escapeHtml(a.email)}</div>
-                            </div>
-                            <button class="btn btn-delete btn-small" onclick="deleteCoAdmin(${a.id})">🗑️ Delete</button>
-                        </div>
-                    `).join('');
-                })
-                .catch(err => console.error('Error loading co-admins:', err));
+            fetch(API_BASE + '/admin/co-admins')
+            .then(function(r){ return r.json(); })
+            .then(function(admins) {
+                var el = document.getElementById('coAdminsList');
+                if (!Array.isArray(admins) || admins.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No co-admins yet</div>';
+                    return;
+                }
+                el.innerHTML = admins.map(function(a) {
+                    return '<div class="co-admin-item">'
+                        + '<div class="co-admin-info">'
+                        + '<div style="font-weight:bold;color:#0B1B3E;">' + escapeHtml(a.username) + '</div>'
+                        + '<div style="font-size:.9em;color:#999;">' + escapeHtml(a.email) + '</div>'
+                        + '</div>'
+                        + '<button class="btn btn-delete btn-small" onclick="deleteCoAdmin(' + a.id + ')">Delete</button>'
+                        + '</div>';
+                }).join('');
+            })
+            .catch(function(e){ console.error('loadCoAdmins:', e); });
         }
 
+        /* ── stats ───────────────────────────────────────────── */
         function loadStats() {
-            fetch(`${API_BASE}/posts`)
-                .then(r => r.json())
-                .then(posts => {
-                    if (!Array.isArray(posts)) posts = [];
-                    const today = new Date().toDateString();
-                    document.getElementById('statTotal').textContent = posts.length;
-                    document.getElementById('statToday').textContent = posts.filter(p => new Date(p.created_at).toDateString() === today).length;
-                    document.getElementById('statMembers').textContent = new Set(posts.map(p => p.author_email)).size;
-                })
-                .catch(err => console.error('Error loading stats:', err));
+            fetch(API_BASE + '/posts')
+            .then(function(r){ return r.json(); })
+            .then(function(posts) {
+                if (!Array.isArray(posts)) posts = [];
+                var today = new Date().toDateString();
+                document.getElementById('statTotal').textContent   = posts.length;
+                document.getElementById('statToday').textContent   = posts.filter(function(p){ return new Date(p.created_at).toDateString()===today; }).length;
+                document.getElementById('statMembers').textContent = new Set(posts.map(function(p){ return p.author_email; })).size;
+            })
+            .catch(function(e){ console.error('loadStats:', e); });
         }
 
+        /* ── post actions ────────────────────────────────────── */
         function approvePost(id) {
             if (!confirm('Approve this post?')) return;
-            fetch(`${API_BASE}/admin/posts/${id}/approve`, { method: 'POST' })
-                .then(r => r.json())
-                .then(() => { showMessage('✅ Post approved', 'success'); loadPendingPosts(); loadApprovedPosts(); })
-                .catch(() => showMessage('❌ Error approving post', 'error'));
+            fetch(API_BASE + '/admin/posts/' + id + '/approve', {method:'POST'})
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage('Post approved', 'success'); loadPendingPosts(); loadApprovedPosts(); })
+            .catch(function(){ showMessage('Error approving post', 'error'); });
         }
-
         function rejectPost(id) {
             if (!confirm('Reject this post?')) return;
-            fetch(`${API_BASE}/admin/posts/${id}`, { method: 'DELETE' })
-                .then(r => r.json())
-                .then(() => { showMessage('✅ Post rejected', 'success'); loadPendingPosts(); })
-                .catch(() => showMessage('❌ Error', 'error'));
+            fetch(API_BASE + '/admin/posts/' + id, {method:'DELETE'})
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage('Post rejected', 'success'); loadPendingPosts(); })
+            .catch(function(){ showMessage('Error', 'error'); });
         }
-
         function deleteApprovedPost(id) {
             if (!confirm('Delete this post?')) return;
-            fetch(`${API_BASE}/admin/posts/approved/${id}`, { method: 'DELETE' })
-                .then(r => r.json())
-                .then(() => { showMessage('✅ Post deleted', 'success'); loadApprovedPosts(); })
-                .catch(() => showMessage('❌ Error', 'error'));
+            fetch(API_BASE + '/admin/posts/approved/' + id, {method:'DELETE'})
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage('Post deleted', 'success'); loadApprovedPosts(); })
+            .catch(function(){ showMessage('Error', 'error'); });
         }
-
         function toggleFeatured(id, featured) {
-            fetch(`${API_BASE}/admin/posts/${id}/featured`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ featured: featured })
+            fetch(API_BASE + '/admin/posts/' + id + '/featured', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({featured:featured})
             })
-            .then(r => r.json())
-            .then(() => { showMessage(featured ? '⭐ Post featured' : '☆ Post unfeatured', 'success'); loadApprovedPosts(); })
-            .catch(() => showMessage('❌ Error', 'error'));
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage(featured ? 'Post featured' : 'Post unfeatured', 'success'); loadApprovedPosts(); })
+            .catch(function(){ showMessage('Error', 'error'); });
         }
 
+        /* ── comment actions ─────────────────────────────────── */
         function approveComment(id) {
             if (!confirm('Approve this comment?')) return;
-            fetch(`${API_BASE}/admin/comments/${id}/approve`, { method: 'POST' })
-                .then(r => r.json())
-                .then(() => { showMessage('✅ Comment approved', 'success'); loadComments(); })
-                .catch(() => showMessage('❌ Error', 'error'));
+            fetch(API_BASE + '/admin/comments/' + id + '/approve', {method:'POST'})
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage('Comment approved', 'success'); loadComments(); })
+            .catch(function(){ showMessage('Error', 'error'); });
         }
-
         function deleteComment(id) {
             if (!confirm('Delete this comment?')) return;
-            fetch(`${API_BASE}/admin/comments/${id}`, { method: 'DELETE' })
-                .then(r => r.json())
-                .then(() => { showMessage('✅ Comment deleted', 'success'); loadComments(); })
-                .catch(() => showMessage('❌ Error', 'error'));
+            fetch(API_BASE + '/admin/comments/' + id, {method:'DELETE'})
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage('Comment deleted', 'success'); loadComments(); })
+            .catch(function(){ showMessage('Error', 'error'); });
         }
 
-        async function approveUser(userId) {
+        /* ── user actions ────────────────────────────────────── */
+        function approveUser(userId) {
             if (!confirm('Approve this user?')) return;
-            try {
-                const response = await fetch(`${API_BASE}/admin/users/${userId}/approve`, { method: 'POST' });
-                if (response.ok) {
-                    showMessage('✅ User approved!', 'success');
-                    setTimeout(() => { loadPendingUsers(); loadApprovedUsers(); }, 1000);
-                }
-            } catch (error) { console.error('Error:', error); }
+            fetch(API_BASE + '/admin/users/' + userId + '/approve', {method:'POST'})
+            .then(function(r){
+                if (r.ok) { showMessage('User approved!', 'success'); setTimeout(function(){ loadPendingUsers(); loadApprovedUsers(); }, 1000); }
+            })
+            .catch(function(e){ console.error(e); });
         }
-
-        async function rejectUser(userId) {
+        function rejectUser(userId) {
             if (!confirm('Reject and delete this user?')) return;
-            try {
-                const response = await fetch(`${API_BASE}/admin/users/${userId}`, { method: 'DELETE' });
-                if (response.ok) {
-                    showMessage('✅ User rejected!', 'success');
-                    setTimeout(() => loadPendingUsers(), 1000);
-                }
-            } catch (error) { console.error('Error:', error); }
+            fetch(API_BASE + '/admin/users/' + userId, {method:'DELETE'})
+            .then(function(r){
+                if (r.ok) { showMessage('User rejected!', 'success'); setTimeout(function(){ loadPendingUsers(); }, 1000); }
+            })
+            .catch(function(e){ console.error(e); });
         }
 
+        /* ── password reset modal ────────────────────────────── */
         function openResetModal(userId, username) {
             currentResetUserId = userId;
-            document.getElementById('modalUsername').textContent = username;
-            document.getElementById('resetPassword').value = '';
+            document.getElementById('modalUsername').textContent  = username;
+            document.getElementById('resetPassword').value        = '';
             document.getElementById('resetPassword').style.display = 'block';
             document.getElementById('newPasswordDisplay').style.display = 'none';
             document.getElementById('resetModal').classList.add('active');
         }
-
         function closeResetModal() {
             document.getElementById('resetModal').classList.remove('active');
             currentResetUserId = null;
         }
-
-        async function submitPasswordReset() {
-            const newPassword = document.getElementById('resetPassword').value;
-            if (!newPassword || newPassword.length < 6) {
-                alert('Password must be at least 6 characters');
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/admin/users/${currentResetUserId}/reset-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ newPassword })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    document.getElementById('displayPassword').textContent = data.newPassword || newPassword;
+        function submitPasswordReset() {
+            var newPassword = document.getElementById('resetPassword').value;
+            if (!newPassword || newPassword.length < 6) { alert('Password must be at least 6 characters'); return; }
+            fetch(API_BASE + '/admin/users/' + currentResetUserId + '/reset-password', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({newPassword:newPassword})
+            })
+            .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, data:d}; }); })
+            .then(function(res) {
+                if (res.ok) {
+                    document.getElementById('displayPassword').textContent = res.data.newPassword || newPassword;
                     document.getElementById('newPasswordDisplay').style.display = 'block';
                     document.getElementById('resetPassword').style.display = 'none';
                 } else {
-                    alert('Error: ' + data.error);
+                    alert('Error: ' + (res.data.error || 'Unknown error'));
                 }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            })
+            .catch(function(e){ alert('Error: ' + e.message); });
         }
 
+        /* ── co-admin actions ────────────────────────────────── */
         function createCoAdmin() {
-            const username = document.getElementById('coAdminUsername').value;
-            const email = document.getElementById('coAdminEmail').value;
-            const password = document.getElementById('coAdminPassword').value;
-            if (!username || !email || !password) { showMessage('❌ All fields required', 'error'); return; }
-            fetch(`${API_BASE}/admin/co-admins/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
+            var username = document.getElementById('coAdminUsername').value;
+            var email    = document.getElementById('coAdminEmail').value;
+            var password = document.getElementById('coAdminPassword').value;
+            if (!username || !email || !password) { showMessage('All fields required', 'error'); return; }
+            fetch(API_BASE + '/admin/co-admins/create', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({username:username, email:email, password:password})
             })
-            .then(r => r.json())
-            .then(() => {
-                showMessage('✅ Co-admin created', 'success');
+            .then(function(r){ return r.json(); })
+            .then(function(){
+                showMessage('Co-admin created', 'success');
                 document.getElementById('coAdminUsername').value = '';
                 document.getElementById('coAdminEmail').value = '';
                 document.getElementById('coAdminPassword').value = '';
                 loadCoAdmins();
             })
-            .catch(() => showMessage('❌ Error creating co-admin', 'error'));
+            .catch(function(){ showMessage('Error creating co-admin', 'error'); });
         }
-
         function deleteCoAdmin(id) {
             if (!confirm('Delete this co-admin?')) return;
-            fetch(`${API_BASE}/admin/co-admins/${id}`, { method: 'DELETE' })
-                .then(r => r.json())
-                .then(() => { showMessage('✅ Co-admin deleted', 'success'); loadCoAdmins(); })
-                .catch(() => showMessage('❌ Error', 'error'));
+            fetch(API_BASE + '/admin/co-admins/' + id, {method:'DELETE'})
+            .then(function(r){ return r.json(); })
+            .then(function(){ showMessage('Co-admin deleted', 'success'); loadCoAdmins(); })
+            .catch(function(){ showMessage('Error', 'error'); });
         }
 
-        // FIX: Renamed id from newPassword to adminNewPassword to avoid conflict with reset modal
+        /* ── settings ────────────────────────────────────────── */
         function changePassword() {
-            const newPwd = document.getElementById('adminNewPassword').value;
-            const confirmPwd = document.getElementById('confirmPassword').value;
-            if (!newPwd || !confirmPwd) { showMessage('❌ Both fields required', 'error'); return; }
-            if (newPwd !== confirmPwd) { showMessage('❌ Passwords do not match', 'error'); return; }
-            fetch(`${API_BASE}/admin/change-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newPassword: newPwd })
+            var newPwd     = document.getElementById('adminNewPassword').value;
+            var confirmPwd = document.getElementById('confirmPassword').value;
+            if (!newPwd || !confirmPwd) { showMessage('Both fields required', 'error'); return; }
+            if (newPwd !== confirmPwd)  { showMessage('Passwords do not match', 'error'); return; }
+            fetch(API_BASE + '/admin/change-password', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({newPassword:newPwd})
             })
-            .then(r => r.json())
-            .then(() => {
-                showMessage('✅ Password changed successfully', 'success');
+            .then(function(r){ return r.json(); })
+            .then(function(){
+                showMessage('Password changed successfully', 'success');
                 document.getElementById('adminNewPassword').value = '';
-                document.getElementById('confirmPassword').value = '';
+                document.getElementById('confirmPassword').value  = '';
             })
-            .catch(() => showMessage('❌ Error changing password', 'error'));
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return String(text).replace(/[&<>"']/g, m => map[m]);
+            .catch(function(){ showMessage('Error changing password', 'error'); });
         }
 
     </script>
