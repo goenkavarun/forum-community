@@ -613,6 +613,22 @@ app.get('/api/admin/comments/pending', (req, res) => {
     );
 });
 
+// Get approved comments  ← NEW
+app.get('/api/admin/comments/approved', (req, res) => {
+    db.all(
+        `SELECT c.*, p.title as post_title FROM comments c
+         JOIN posts p ON c.post_id = p.id
+         WHERE c.status = 'approved'
+         ORDER BY c.created_at DESC`,
+        (err, comments) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch approved comments' });
+            }
+            res.json(comments || []);
+        }
+    );
+});
+
 // Approve comment
 app.post('/api/admin/comments/:id/approve', (req, res) => {
     db.run(
