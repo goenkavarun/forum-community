@@ -54,7 +54,7 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 // ═══════════════════════════════════════════════════════════
 
 app.use(express.static(path.join(__dirname)));
-app.use('/uploads', express.static(path.join(dataDir, 'uploads')));
+app.use('/data/uploads', express.static('/home/u277837837/domains/indiadigitalmarketingforum.org/data/uploads'));
 
 // ═══════════════════════════════════════════════════════════
 // RATE LIMITING
@@ -455,7 +455,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
         return res.status(400).json({ error: 'No image provided' });
     }
 
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = `/data/uploads/${req.file.filename}`;
     res.json({
         message: 'Image uploaded successfully',
         imageUrl: imageUrl
