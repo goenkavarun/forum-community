@@ -731,52 +731,52 @@
             }
         }
 
+        function buildPostHtml(post) {
+            var img = post.image_url ? '<img src="' + post.image_url + '" alt="Post image" class="post-image">' : '';
+            var commentForm = userToken
+                ? '<div class="comment-form">'
+                    + '<textarea id="commentText-' + post.id + '" placeholder="Write a comment..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;min-height:80px;font-family:inherit;"></textarea>'
+                    + '<button style="margin-top:10px;width:100%;" onclick="submitComment(' + post.id + ')">Post Comment</button>'
+                    + '</div>'
+                : '<p style="color:#999;font-size:0.9em;text-align:center;padding:10px;"><a href="/login.html" style="color:#FF6B00;font-weight:bold;">Login</a> to leave a comment</p>';
+
+            return '<div class="post-card">'
+                + '<div class="post-title">' + escapeHtml(post.title) + '</div>'
+                + '<div class="post-meta">By <strong>' + escapeHtml(post.author_name) + '</strong> &bull; ' + new Date(post.created_at).toLocaleDateString() + '</div>'
+                + '<span class="post-category">' + escapeHtml(post.category) + '</span>'
+                + (post.tags ? '<span style="font-size:0.8em;color:#999;margin-left:8px;">' + escapeHtml(post.tags) + '</span>' : '')
+                + '<div class="post-description">' + escapeHtml(post.description) + '</div>'
+                + img
+                + '<div class="post-actions">'
+                + '<button class="btn-small" onclick="markHelpful(' + post.id + ')">&#128077; Helpful (' + post.helpful_count + ')</button>'
+                + '<button class="btn-small" style="background:#2196F3;" onclick="toggleComments(' + post.id + ')">&#128172; Comments</button>'
+                + '</div>'
+                + '<div id="comments-' + post.id + '" class="post-expanded">'
+                +   '<div class="comments-section">'
+                +     '<h4 style="color:#0B1B3E;margin-bottom:12px;">&#128172; Comments</h4>'
+                +     '<div id="commentsList-' + post.id + '" style="margin-bottom:15px;">'
+                +       '<div style="color:#999;font-size:0.9em;">Click Comments to load...</div>'
+                +     '</div>'
+                +     commentForm
+                +   '</div>'
+                + '</div>'
+                + '</div>';
+        }
+
         function loadPosts() {
             fetch(API_BASE + '/posts')
-                .then(response => response.json())
-                .then(posts => {
+                .then(function(response) { return response.json(); })
+                .then(function(posts) {
                     if (!Array.isArray(posts)) posts = [];
-
-                    const container = document.getElementById('postsContainer');
-
+                    var container = document.getElementById('postsContainer');
                     if (posts.length === 0) {
                         container.innerHTML = '<div class="empty-state">No posts yet. Be the first to share!</div>';
                         return;
                     }
-
-                    let html = posts.map(post => `
-                        <div class="post-card">
-                            <div class="post-title" onclick="toggleComments(${post.id})">${escapeHtml(post.title)}</div>
-                            <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> • ${new Date(post.created_at).toLocaleDateString()}</div>
-                            <span class="post-category">${escapeHtml(post.category)}</span>
-                            <div class="post-description">${escapeHtml(post.description)}</div>
-                            ${post.image_url ? '<img src="' + post.image_url + '" alt="Post image" class="post-image">' : ''}
-                            <div class="post-actions">
-                                <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
-                            </div>
-                            <div id="comments-${post.id}" class="post-expanded">
-                                <div class="comments-section">
-                                    <h4 style="color: #0B1B3E; margin-bottom: 12px;">💬 Comments</h4>
-                                    <div id="commentsList-${post.id}" style="margin-bottom: 15px;">
-                                        <div style="color: #999; font-size: 0.9em;">Loading comments...</div>
-                                    </div>
-                                    ${userToken ? `
-                                        <div class="comment-form">
-                                            <textarea id="commentText-${post.id}" placeholder="Write a comment..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; min-height: 80px;"></textarea>
-                                            <button style="margin-top: 10px; width: 100%;" onclick="submitComment(${post.id})">Post Comment</button>
-                                        </div>
-                                    ` : `
-                                        <p style="color: #999; font-size: 0.9em; text-align: center;">Login to comment</p>
-                                    `}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-
-                    container.innerHTML = html;
+                    container.innerHTML = posts.map(buildPostHtml).join('');
                 })
-                .catch(err => {
-                    console.error('Error:', err);
+                .catch(function(err) {
+                    console.error('Error loading posts:', err);
                     document.getElementById('postsContainer').innerHTML = '<div class="empty-state">Error loading posts</div>';
                 });
         }
@@ -822,28 +822,27 @@
                 return;
             }
 
-            fetch(API_BASE + '/comments', {
+            fetch(API_BASE + '/posts/' + postId + '/comments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    post_id: postId,
-                    author_name: username,
-                    author_email: localStorage.getItem('userEmail') || 'user@forum.local',
-                    content: text,
-                    user_id: userId
+                    userId: userId,
+                    authorName: username,
+                    authorEmail: localStorage.getItem('userEmail') || 'user@forum.local',
+                    content: text
                 })
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.commentId) {
-                    showMessage('✅ Comment submitted for approval!', 'success');
+                    showMessage('Comment submitted for approval!', 'success');
                     document.getElementById('commentText-' + postId).value = '';
                     loadComments(postId);
                 } else {
-                    showMessage('❌ ' + (data.error || 'Failed to post'), 'error');
+                    showMessage(data.error || 'Failed to post comment', 'error');
                 }
             })
-            .catch(err => showMessage('❌ Error: ' + err.message, 'error'));
+            .catch(function(err) { showMessage('Error: ' + err.message, 'error'); });
         }
 
         function loadStats() {
@@ -902,18 +901,7 @@
                     return;
                 }
 
-                let html = filtered.map(post => `
-                    <div class="post-card">
-                        <div class="post-title" onclick="toggleComments(${post.id})">${escapeHtml(post.title)}</div>
-                        <div class="post-meta">By <strong>${escapeHtml(post.author_name)}</strong> • ${new Date(post.created_at).toLocaleDateString()}</div>
-                        <span class="post-category">${escapeHtml(post.category)}</span>
-                        <div class="post-description">${escapeHtml(post.description)}</div>
-                        ${post.image_url ? '<img src="' + post.image_url + '" alt="Post image" class="post-image">' : ''}
-                        <div class="post-actions">
-                            <button class="btn-small" onclick="markHelpful(${post.id})">👍 Helpful (${post.helpful_count})</button>
-                        </div>
-                    </div>
-                `).join('');
+                let html = filtered.map(buildPostHtml).join('');
 
                 container.innerHTML = html;
             })
