@@ -12,9 +12,43 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
 app.use(helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "https://accounts.google.com",
+                "https://fonts.googleapis.com"
+            ],
+            fontSrc: [
+                "'self'",
+                "https://fonts.gstatic.com"
+            ],
+            scriptSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "https://accounts.google.com",
+                "https://apis.google.com"
+            ],
+            frameSrc: [
+                "https://accounts.google.com",
+                "https://docs.google.com"
+            ],
+            imgSrc: [
+                "'self'",
+                "data:",
+                "https:",
+                "blob:"
+            ],
+            connectSrc: [
+                "'self'",
+                "https://accounts.google.com",
+                "https://oauth2.googleapis.com"
+            ]
+        }
+    }
 }));
 app.set('trust proxy', 1);
 
