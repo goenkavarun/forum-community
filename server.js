@@ -811,6 +811,21 @@ app.delete('/api/admin/users/:id', (req, res) => {
         }
     );
 });
+
+// Delete approved user
+app.delete('/api/admin/users/:id/delete', (req, res) => {
+    db.run(
+        `DELETE FROM users WHERE id = ?`,
+        [req.params.id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete user' });
+            }
+            res.json({ message: 'User deleted successfully' });
+        }
+    );
+});
+
 // Get co-admins
 app.get('/api/admin/co-admins', (req, res) => {
     db.all(
